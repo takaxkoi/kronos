@@ -63,6 +63,16 @@ Commands run through GitHub, so replies take about 5–15 min. For instant repli
 - **Earnings pause:** signals switch off when an earnings date falls inside the forecast window.
 - **Report card:** every call is logged in `state/predictions.csv` and graded automatically when its window ends. Trust the hit rate and the calibration chart before you trust any single call.
 
+## Backtest results so far (Oct 2026)
+
+`tests/diag_backtest.py` replayed about a year of real daily data: 12 large caps and 624 walk-forward forecasts for each setup.
+
+- **400-day windows made forecasts snap back toward the long-run average.** In the first live run AMD came out −60% in 5 days.
+- **Kronos-small with a 120-day window had the least bias,** so it is now the default everywhere.
+- **No setup beat a coin flip on 5-day stock direction.** All of them landed at about 48–51%, even when 75% or more of the futures agreed.
+
+Treat every signal as unproven until the live report card says otherwise. Results are in `state/diag_bt.json`. To re-run the test, go to **Actions → Kronos diagnostic → Run workflow** and set the script to `diag_backtest.py`.
+
 ## Things to know
 
 - **The repo is public,** so your watchlist, paper trades and journal are visible to anyone. Holdings stay in a secret, and the dashboard shows percentages only.
