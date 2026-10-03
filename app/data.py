@@ -134,6 +134,15 @@ def fetch_history(tickers: list[str], interval: str = "1d", cfg: dict | None = N
     period = period or PERIODS[interval]
     tickers = list(dict.fromkeys(t.upper() for t in tickers))
     out: dict[str, pd.DataFrame] = {}
+    # Alpha Vantage first for your core list when you choose it (paid keys can cover everything)
+    av = (cfg or {}).get("data", {}).get("alphavantage_first", [])
+    if os.environ.get("ALPHAVANTAGE_API_KEY") and os.environ.get("ALPHAVANTAGE_PREMIUM", "").lower() in ("1", "true", "yes") and av:
+        for t in tickers:
+            if interval == "1d" and (av == "all" or t in av) and asset_class(t, cfg) == "stock":
+                df = _drop_partial(fetch_alphavantage(t, interval), interval, "stock")
+                if not df.empty:
+                    out[t] = df
+        tickers = [t for t in tickers if t not in out]
     for start in range(0, len(tickers), 80):
         chunk = tickers[start:start + 80]
         raw = None
@@ -160,12 +169,89 @@ def fetch_history(tickers: list[str], interval: str = "1d", cfg: dict | None = N
                 df = pd.DataFrame()
             if df.empty and cls == "stock":
                 df = _drop_partial(fetch_alpaca(t, interval), interval, cls)
+            if df.empty and cls == "stock" and os.environ.get("ALPHAVANTAGE_PREMIUM", "").lower() in ("1", "true", "yes"):
+                df = _drop_partial(fetch_alphavantage(t, interval), interval, cls)
             if not df.empty:
                 out[t] = df
-    missing = [t for t in tickers if t not in out]
+    missing = [t for t in list(dict.fromkeys(x.upper() for x in tickers)) if t not in out]
     if missing:
         log(f"no data for {len(missing)}: {', '.join(missing[:15])}")
     return out
+
+
+_AV = {"exhausted": False, "last": 0.0, "earnings": None}
+
+
+def _av_get(params: dict) -> str | None:
+    """One Alpha Vantage call (free key: 25/day, 1/sec). Returns CSV text or None."""
+    key = os.environ.get("ALPHAVANTAGE_API_KEY")
+    if not key or _AV["exhausted"]:
+        return None
+    wait = 1.3 - (time.time() - _AV["last"])
+    if wait > 0:
+        time.sleep(wait)
+    try:
+        r = requests.get("https://www.alphavantage.co/query", params={**params, "apikey": key}, timeout=40)
+        _AV["last"] = time.time()
+        text = r.text
+    except Exception as e:
+        log(f"alpha vantage failed: {e}")
+        return None
+    if text.lstrip().startswith("{"):  # JSON here means an error or a rate-limit notice
+        if "rate limit" in text.lower() or "requests per day" in text.lower():
+            _AV["exhausted"] = True
+            log("alpha vantage daily limit reached — falling back")
+        return None
+    return text
+
+
+def fetch_alphavantage(ticker: str, interval: str, cls: str = "stock") -> pd.DataFrame:
+    """US stocks / ETFs from Alpha Vantage (secret ALPHAVANTAGE_API_KEY)."""
+    if cls != "stock" or interval not in ("1d", "1wk", "1h"):
+        return pd.DataFrame()
+    premium = os.environ.get("ALPHAVANTAGE_PREMIUM", "").lower() in ("1", "true", "yes")
+    # free keys only get the raw (not split-adjusted) daily series; paid keys get adjusted prices
+    fn = {"1d": "TIME_SERIES_DAILY_ADJUSTED" if premium else "TIME_SERIES_DAILY",
+          "1wk": "TIME_SERIES_WEEKLY_ADJUSTED", "1h": "TIME_SERIES_INTRADAY"}[interval]
+    params = {"function": fn, "symbol": ticker.replace("-", "."), "datatype": "csv", "outputsize": "full" if premium or interval != "1d" else "compact"}
+    if interval == "1h":
+        params.update({"interval": "60min", "extended_hours": "false"})
+    text = _av_get(params)
+    if not text:
+        return pd.DataFrame()
+    df = pd.read_csv(io.StringIO(text))
+    df = df.rename(columns={"timestamp": "ts", "adjusted close": "adj_close"})
+    if "ts" not in df.columns:
+        return pd.DataFrame()
+    df.index = pd.to_datetime(df["ts"])
+    if "adj_close" in df.columns:  # back-adjust OHLC for splits/dividends
+        f = df["adj_close"] / df["close"]
+        for c in ("open", "high", "low"):
+            df[c] = df[c] * f
+        df["close"] = df["adj_close"]
+    if interval == "1h":  # AV stamps bars at their END (10:30 = 9:30-10:30); match Yahoo's start-stamps
+        df.index = df.index - pd.Timedelta(hours=1)
+        df = df[(df.index.time >= pd.Timestamp("09:30").time()) & (df.index.time <= pd.Timestamp("15:30").time())]
+    if interval == "1wk":  # AV stamps the week's Friday; use Monday like Yahoo
+        df.index = df.index.normalize() - pd.to_timedelta(df.index.weekday, unit="D")
+    return _standardize(df[["open", "high", "low", "close", "volume"]].sort_index(), "stock")
+
+
+def av_earnings() -> dict[str, str]:
+    """Every upcoming US earnings date in ONE call (next 3 months)."""
+    if _AV["earnings"] is None:
+        text = _av_get({"function": "EARNINGS_CALENDAR", "horizon": "3month"})
+        cal: dict[str, str] = {}
+        if text:
+            try:
+                for _, r in pd.read_csv(io.StringIO(text)).iterrows():
+                    s = str(r["symbol"]).replace(".", "-")
+                    if s not in cal or str(r["reportDate"]) < cal[s]:
+                        cal[s] = str(r["reportDate"])
+            except Exception:
+                pass
+        _AV["earnings"] = cal
+    return _AV["earnings"]
 
 
 def fetch_alpaca(ticker: str, interval: str) -> pd.DataFrame:
@@ -275,6 +361,10 @@ def sector_map(tickers: list[str], cfg: dict) -> dict[str, str]:
 
 
 def next_earnings(ticker: str) -> str | None:
+    if os.environ.get("ALPHAVANTAGE_API_KEY"):
+        cal = av_earnings()
+        if cal:
+            return cal.get(ticker.upper())
     import yfinance as yf
     try:
         cal = yf.Ticker(ticker).calendar

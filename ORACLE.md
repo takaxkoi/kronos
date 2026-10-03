@@ -32,6 +32,7 @@ Dashboard (site/index.html on Netlify) reads them straight from this repo
    | `TELEGRAM_BOT_TOKEN` | yes | from BotFather |
    | `TELEGRAM_CHAT_ID` | yes | your chat id (the bot only ever answers this id) |
    | `PORTFOLIO_HOLDINGS` | optional | `AAPL:10,MSFT:5` (kept out of the public files) |
+   | `ALPHAVANTAGE_API_KEY` | optional | your Alpha Vantage key: earnings dates for every stock (free). Add `ALPHAVANTAGE_PREMIUM=true` on a paid key to also pull prices |
    | `ALPACA_KEY_ID` / `ALPACA_SECRET_KEY` | optional | free paper account at alpaca.markets: auto-trading and a backup price feed |
    | `ALPACA_LIVE_CONFIRM` | optional | `YES`. Real-money trading also needs `autotrade.live: true` **and** a passing report card |
    | `HF_TOKEN` / `HF_USER` | optional | free huggingface.co account, used to store your monthly custom models |
