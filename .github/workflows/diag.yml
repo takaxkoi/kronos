@@ -1,17 +1,20 @@
 name: Kronos diagnostic (manual)
 on:
   workflow_dispatch:
+    inputs:
+      script:
+        default: diag_kronos.py
 permissions:
   contents: write
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/oracle-setup
       - name: Run
-        run: python tests/diag_kronos.py
+        run: python tests/${{ inputs.script || 'diag_kronos.py' }}
       - name: Save results
         if: always()
         run: ./scripts/commit.sh "diagnostic"
