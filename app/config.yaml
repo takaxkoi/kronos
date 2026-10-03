@@ -137,3 +137,10 @@ retrain:
   tickers: [AAPL, NVDA, TSLA]     # custom models trained monthly (needs HF_TOKEN + HF_USER secrets)
   epochs: 3
   learning_rate: 0.000002
+
+capture:
+  # DATA VAULT — daily snapshot saved to data/daily/YYYY-MM-DD/ (python -m app.cli capture)
+  fundamentals_all: true     # fundamentals + short interest + analyst snapshot for every S&P 500 stock
+  backfill: true             # one-time 10-year daily price history for every ticker -> data/history/
+  av_daily_limit: 25         # Alpha Vantage free key allowance
+  av_reserve: 3              # calls left unused for the daily scan's earnings lookup

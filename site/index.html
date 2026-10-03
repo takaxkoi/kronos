@@ -516,7 +516,14 @@ async function viewSetup(){
     <li><b>Optional:</b> <code>ALPACA_KEY_ID</code> + <code>ALPACA_SECRET_KEY</code> (free paper account at alpaca.markets) for auto-trading and a backup price feed. <code>HF_TOKEN</code> + <code>HF_USER</code> for monthly custom models.</li></ol></div>
     <div class="card"><h3>Data source</h3><p class="sub">Forecast files are read from your GitHub repo so this page is always current — even when hosted on Netlify.</p>
     <input class="f" id="src" value="${esc(SRC)}"><div class="row" style="margin-top:10px;justify-content:flex-start"><button class="btn gold" id="saveSrc">Save</button><button class="btn" id="resetSrc">Reset</button></div>
-    <h3 style="margin-top:20px">Schedule (Eastern)</h3><div class="sub" style="line-height:1.9">Daily scan · ~5:15 PM (4:15 in winter) weekdays<br>Pre-market briefing · ~8:40 AM (7:40 in winter)<br>S&P 500 scanner · ~3 AM<br>Crypto board · every 2 hours<br>Bot + price alerts · every ~10 min<br>Custom-model retrain · 2nd of each month</div></div></div>`;
+    <h3 style="margin-top:20px">Schedule (Eastern)</h3><div class="sub" style="line-height:1.9">Daily scan · ~5:15 PM (4:15 in winter) weekdays<br>Pre-market briefing · ~8:40 AM (7:40 in winter)<br>S&P 500 scanner · ~3 AM<br>Crypto board · every 2 hours<br>Data vault capture · ~6:40 PM (5:40 in winter)<br>Bot + price alerts · every ~10 min<br>Custom-model retrain · 2nd of each month</div></div></div>`;
+  const V = await get('vault.json');
+  const vh = V ? `<div class="card" style="margin-top:14px"><h3>Data vault <span class="r">${V.days} day${V.days===1?'':'s'} captured · ${V.size_mb} MB</span></h3>
+    <div class="sub" style="margin-bottom:10px">Daily point-in-time snapshots since ${esc(V.first)} — last ${esc(V.last)}. This history is what the Edge Lab will test signals on.</div>
+    <div class="kv">${Object.entries(V.latest.files||{}).map(([k,n])=>`<div><span>${esc(k.replace(/_/g,' '))}</span><b>${Number(n).toLocaleString()}</b></div>`).join('')}
+    ${Object.entries(V.latest.alpha_vantage||{}).filter(([k])=>k!=='skipped').map(([k,n])=>`<div><span>AV ${esc(k.replace(/_/g,' '))}</span><b>${esc(n)}</b></div>`).join('')}</div>
+    ${V.latest.alpha_vantage?.skipped?`<div class="sub" style="margin-top:8px">Alpha Vantage: ${esc(V.latest.alpha_vantage.skipped)}</div>`:''}</div>` : '';
+  $('#view').insertAdjacentHTML('beforeend', vh);
   $('#saveSrc').onclick = () => { SRC = $('#src').value.trim().replace(/\/?$/, '/'); store.set('oracle_src', SRC); for (const k in cache) delete cache[k]; boot(); };
   $('#resetSrc').onclick = () => { SRC = DEFAULT_SRC; store.set('oracle_src', SRC); for (const k in cache) delete cache[k]; boot(); };
 }

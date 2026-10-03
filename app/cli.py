@@ -7,6 +7,7 @@
   python -m app.cli live         # bot commands + price-hit alerts
   python -m app.cli bot --live   # instant bot replies (run on your own computer)
   python -m app.cli backtest [TICKERS...] [--battle]
+  python -m app.cli capture      # DATA VAULT: daily point-in-time snapshot of everything -> data/daily/
   python -m app.cli grade        # grade finished predictions only
   python -m app.cli retrain      # monthly fine-tune of custom per-ticker models
 """
@@ -47,6 +48,9 @@ def main(argv: list[str]) -> None:
     elif cmd == "backtest":
         tick = [a.upper() for a in argv[1:] if not a.startswith("--")]
         scan.backtest_lab(tick or None, models="--battle" in argv)
+    elif cmd == "capture":
+        from .capture import capture
+        capture()
     elif cmd == "grade":
         from . import ledger
         from .core import SITE_DATA, load_config, write_json

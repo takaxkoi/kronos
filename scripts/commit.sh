@@ -3,7 +3,7 @@
 set -u
 git config user.name "kronos-oracle[bot]"
 git config user.email "oracle-bot@users.noreply.github.com"
-for p in state site/data app/config.yaml app/custom_models.yaml; do
+for p in state site/data data app/config.yaml app/custom_models.yaml; do
   [ -e "$p" ] && git add -A -- "$p"
 done
 if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi

@@ -40,6 +40,22 @@ Dashboard (site/index.html on Netlify) reads them straight from this repo
 4. **First run.** Go to **Actions → Daily scan → Run workflow**. The first run takes about 45–70 min while it downloads the model.
 5. **Dashboard.** On Netlify, choose **Add new site → Import from GitHub → kronos**. The publish folder is `site` (`netlify.toml` already sets this). You can also drag and drop the `site` folder. The dashboard reads fresh data from GitHub either way.
 
+## Data Vault (daily capture)
+
+`Data vault (daily capture)` runs every weekday at about 6:40 PM ET and saves a snapshot to `data/daily/YYYY-MM-DD/`. Most of this data gets overwritten by providers, so this history can't be downloaded later.
+
+- **Every ticker:** that day's prices. The first run also saves 10 years of daily history to `data/history/`.
+- **Every S&P 500 stock:** fundamentals, short interest, analyst rating and price targets, and ownership.
+- **Your core list:** options put/call ratios and implied volatility, analyst upgrades and downgrades, insider trades, earnings surprises, institutions, and news.
+- **Alpha Vantage** (free key, 25 calls a day, budgeted by the job):
+  - the earnings calendar for every stock
+  - market movers
+  - news sentiment across the market
+  - 2- and 10-year Treasury yields
+  - a rotating deep-dive into your core list's earnings history, estimate revisions and insider trades
+
+Read any table across all days with `from app.capture import load_days; load_days("fundamentals")`.
+
 ## Change settings
 
 Everything is in `app/config.yaml`, including the watchlist, models, samples, horizon, filters, risk, paper trading and autotrade. You can also manage the watchlist from Telegram with `/watch add TSLA`.
