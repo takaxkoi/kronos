@@ -8,10 +8,11 @@ model:
   name: NeoQuasar/Kronos-small
   tokenizer: NeoQuasar/Kronos-Tokenizer-base
   max_context: 512
-  # Lighter model used for the big overnight S&P 500 scan
-  scanner_name: NeoQuasar/Kronos-mini
-  scanner_tokenizer: NeoQuasar/Kronos-Tokenizer-2k
-  scanner_max_context: 2048
+  # Model for the overnight S&P 500 scan. The Oct 2026 bake-off (state/diag_bt.json) showed
+  # mini leaning bearish, so the scanner uses small too (~10 min for 500 stocks).
+  scanner_name: NeoQuasar/Kronos-small
+  scanner_tokenizer: NeoQuasar/Kronos-Tokenizer-base
+  scanner_max_context: 512
   # Models raced against each other in "Model Battle"
   battle:
     - {name: NeoQuasar/Kronos-mini,  tokenizer: NeoQuasar/Kronos-Tokenizer-2k,   max_context: 2048}
@@ -20,7 +21,8 @@ model:
   # Fine-tuned per-ticker models are written to app/custom_models.yaml by the monthly retrain
 
 forecast:
-  lookback: 400          # candles of history fed to Kronos
+  lookback: 120          # candles of history fed to Kronos. 400 made forecasts snap back toward the
+                         # long-run average (AMD -60% in a week); 120 had the least bias in backtests
   horizon: 5             # trading days ahead (daily timeframe)
   samples: 30            # simulated futures per stock (agreement meter = X / samples)
   temperature: 1.0
