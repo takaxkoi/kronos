@@ -1,0 +1,33 @@
+name: Bot + price alerts
+on:
+  schedule:
+    - cron: "*/10 * * * *"    # every ~10 min (GitHub may delay a few minutes)
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: oracle-live
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      PORTFOLIO_HOLDINGS: ${{ secrets.PORTFOLIO_HOLDINGS }}
+      ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_LIVE_CONFIRM: ${{ secrets.ALPACA_LIVE_CONFIRM }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_USER: ${{ secrets.HF_USER }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/oracle-setup
+        with:
+          full: "false"
+      - name: Run
+        run: python -m app.cli live
+      - name: Save results
+        if: always()
+        run: ./scripts/commit.sh "bot"

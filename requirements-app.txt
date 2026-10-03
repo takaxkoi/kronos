@@ -1,0 +1,11 @@
+numpy
+pandas>=2.2,<3
+einops==0.8.1
+huggingface_hub==0.33.1
+safetensors
+tqdm
+matplotlib
+pyyaml
+requests
+yfinance>=0.2.54
+lxml

@@ -1,0 +1,2 @@
+# several scheduled jobs append predictions at the same time: keep every line from both sides
+state/predictions.csv merge=union

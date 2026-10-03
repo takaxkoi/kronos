@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kronos Oracle</title>
+<meta name="description" content="Kronos AI market forecasts: scores, ranges, trade plans and a live report card.">
+<meta name="theme-color" content="#0B0B0D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Oracle">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B0B0D'/%3E%3Cpath d='M14 44 L26 30 L34 37 L50 18' stroke='%23BF9A3F' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0B0D; --panel:#131316; --panel2:#18181C; --line:#26262C; --line2:#33333B;
+  --ink:#ECE7DA; --ink2:#B5AE9E; --muted:#7D7769; --gold:#BF9A3F; --gold2:#D9B865; --goldchart:#AD8A36;
+  --up:#1F9E89; --dn:#E0565B; --blue:#4C8DE0; --rose:#CF6F7F; --warn:#D8A23A;
+  --r:14px; --mono:'JetBrains Mono',ui-monospace,monospace; --serif:'Fraunces',Georgia,serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1200px 500px at 70% -10%,rgba(191,154,63,.10),transparent 60%),var(--bg);min-height:100vh}
+a{color:var(--gold2);text-decoration:none}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 16px 80px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:22px 0 14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand h1{font:700 22px/1 var(--serif);letter-spacing:.06em;margin:0;color:var(--ink)}
+.brand h1 b{color:var(--gold)}
+.brand small{display:block;color:var(--muted);font:500 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-top:4px}
+.hdr-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--line2);border-radius:99px;font:600 12px var(--mono);letter-spacing:.06em;color:var(--ink2);background:var(--panel)}
+.pill.gold{border-color:rgba(191,154,63,.5);color:var(--gold2)}
+.btn{cursor:pointer;border:1px solid var(--line2);background:var(--panel);border-radius:10px;padding:8px 14px;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--gold)}
+.btn.gold{background:var(--gold);color:#16130B;border-color:var(--gold)}
+nav{display:flex;gap:4px;overflow-x:auto;padding:4px;border:1px solid var(--line);border-radius:12px;background:rgba(19,19,22,.8);margin-bottom:18px;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:0 0 auto;border:0;background:none;padding:9px 14px;border-radius:9px;color:var(--ink2);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+nav button.on{background:var(--panel2);color:var(--gold2);box-shadow:inset 0 0 0 1px rgba(191,154,63,.35)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:980px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.g2,.g3,.g4{grid-template-columns:minmax(0,1fr)}.g4.keep2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.card h3{margin:0 0 12px;font:600 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.card h3 .r{float:right;color:var(--ink2);letter-spacing:.04em;text-transform:none}
+.sec-title{font:600 20px/1.2 var(--serif);margin:26px 0 12px;color:var(--ink)}
+.sec-title small{font:500 12px var(--mono);color:var(--muted);margin-left:8px;letter-spacing:.04em}
+.hero{font:700 44px/1 var(--serif);color:var(--ink)}
+.hero.gold{color:var(--gold2)}
+.sub{color:var(--muted);font-size:12.5px}
+.mono{font-family:var(--mono)}
+.up{color:var(--up)}.dn{color:var(--dn)}.gold-t{color:var(--gold2)}.muted{color:var(--muted)}
+.row{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 11px var(--mono);padding:3px 8px;border-radius:99px;border:1px solid var(--line2);color:var(--ink2);white-space:nowrap}
+.chip.g{border-color:rgba(31,158,137,.5);color:#5CC9B4}.chip.r{border-color:rgba(224,86,91,.5);color:#F08C8F}.chip.y{border-color:rgba(216,162,58,.55);color:#E9C06B}
+.setup{cursor:pointer;transition:border-color .15s,transform .15s}
+.setup:hover{border-color:rgba(191,154,63,.55);transform:translateY(-1px)}
+.tk{font:700 18px var(--serif);letter-spacing:.02em}
+.nm{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.score{font:700 26px/1 var(--mono);color:var(--gold2)}
+.score small{font-size:11px;color:var(--muted)}
+.meter{display:flex;gap:2px;flex-wrap:wrap;margin:10px 0 4px}
+.meter i{width:7px;height:12px;border-radius:2px;background:var(--line2)}
+.meter i.u{background:var(--up)}.meter i.d{background:var(--dn)}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.kv div{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:9px;padding:7px 8px;min-width:0}
+.kv span{display:block;font:500 10px var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.kv b{font:600 13px var(--mono);white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font:600 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--line2);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.n,th.n{text-align:right;font-family:var(--mono)}
+tr.click{cursor:pointer}tr.click:hover td{background:rgba(191,154,63,.06)}
+.tbl{overflow-x:auto;margin:0 -4px;padding:0 4px}
+.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line2);border-radius:var(--r)}
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.tip{position:absolute;pointer-events:none;background:#0E0E11;border:1px solid var(--line2);border-radius:9px;padding:8px 10px;font:500 11.5px/1.5 var(--mono);color:var(--ink);white-space:nowrap;opacity:0;transition:opacity .08s;z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font:500 11.5px var(--mono);color:var(--ink2);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden}
+.seg button{border:0;background:none;padding:6px 12px;font:600 12px var(--mono);color:var(--ink2);cursor:pointer}
+.seg button.on{background:var(--gold);color:#16130B}
+.heat{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:3px}
+.heat div{border-radius:6px;padding:7px 6px;font:600 11px var(--mono);cursor:pointer;min-height:46px;color:#F4F1E8}
+.heat div small{display:block;font-weight:500;opacity:.85;margin-top:2px}
+.hbar{display:grid;grid-template-columns:150px 1fr 70px;gap:10px;align-items:center;font-size:13px;padding:5px 0}
+.hbar .track{position:relative;height:12px}
+.hbar .track .mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--line2)}
+.hbar .track b{position:absolute;top:0;height:12px;border-radius:3px}
+@media(max-width:640px){.hbar{grid-template-columns:110px 1fr 62px}}
+.gauge{height:14px;border-radius:99px;background:var(--dn);overflow:hidden;position:relative;margin:12px 0 6px}
+.gauge b{position:absolute;inset:0 auto 0 0;background:var(--up);border-right:2px solid var(--bg)}
+.news a{display:block;padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink);font-size:13.5px}
+.news a small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.disc{margin-top:28px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+input.f{background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:7px 9px;width:100%;font-family:var(--mono);font-size:13px}
+input.f:focus{outline:none;border-color:var(--gold)}
+.steps li{margin:0 0 14px;color:var(--ink2)}
+.steps li b{color:var(--ink)}
+code{font-family:var(--mono);font-size:12.5px;background:rgba(191,154,63,.1);color:var(--gold2);padding:1px 6px;border-radius:5px}
+.back{cursor:pointer;color:var(--muted);font:600 12px var(--mono);letter-spacing:.06em;margin:4px 0 10px;display:inline-block}
+.loading{padding:60px;text-align:center;color:var(--muted);font:500 13px var(--mono);letter-spacing:.1em}
+.warnbox{border:1px solid rgba(216,162,58,.45);background:rgba(216,162,58,.07);border-radius:12px;padding:12px 14px;font-size:13px;color:#E9D3A2}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg width="38" height="38" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#16161A" stroke="#33333B"/><path d="M14 44 L26 30 L34 37 L50 18" stroke="#BF9A3F" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="18" r="4" fill="#D9B865"/></svg>
+      <div><h1>KRONOS <b>ORACLE</b></h1><small id="stamp">loading…</small></div>
+    </div>
+    <div class="hdr-right">
+      <span class="pill gold" id="moodPill">—</span>
+      <span class="pill" id="hitPill">REPORT CARD —</span>
+      <button class="btn" id="reload" title="Reload data">↻</button>
+    </div>
+  </header>
+  <nav id="nav"></nav>
+  <main id="view"><div class="loading">LOADING FORECASTS…</div></main>
+  <p class="disc">Kronos Oracle shows machine-learning forecasts of price patterns. They are probabilities, not promises — the report card shows how often they have actually been right. Not financial advice.</p>
+</div>
+
+<script>
+const DEFAULT_SRC = 'https://raw.githubusercontent.com/takaxkoi/kronos/master/site/data/';
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+};
+let SRC = store.get('oracle_src', DEFAULT_SRC);
+const cache = {};
+async function get(path){
+  if (cache[path] !== undefined) return cache[path];
+  const tries = [SRC + path, 'data/' + path];
+  for (const u of tries){
+    try { const r = await fetch(u, {cache:'no-cache'}); if (r.ok){ cache[path] = await r.json(); return cache[path]; } } catch(e){}
+  }
+  cache[path] = null; return null;
+}
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pct = (x, d=1) => x == null || isNaN(x) ? '—' : (x > 0 ? '+' : '') + (x*100).toFixed(d) + '%';
+const pct0 = x => x == null || isNaN(x) ? '—' : Math.round(x*100) + '%';
+const px = x => x == null || isNaN(x) ? '—' : Math.abs(x) >= 1000 ? x.toLocaleString(undefined,{maximumFractionDigits:0}) : Math.abs(x) >= 1 ? x.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) : x.toPrecision(4);
+const money = x => x == null ? '—' : '$' + Math.round(x).toLocaleString();
+const arrow = d => d === 'up' ? '<span class="up">▲</span>' : '<span class="dn">▼</span>';
+const cls = x => x > 0 ? 'up' : x < 0 ? 'dn' : '';
+const dateS = s => s ? new Date(s).toLocaleDateString(undefined,{month:'short',day:'numeric'}) : '—';
+const safe = t => t.replace('^','_').replace(/=/g,'_').replace(/\//g,'_');
+const ago = s => { if(!s) return '—'; const m = (Date.now() - new Date(s))/60000; return m < 60 ? Math.round(m)+'m ago' : m < 2880 ? Math.round(m/60)+'h ago' : Math.round(m/1440)+'d ago'; };
+const FLAG = {breakout:['🚀 breakout','g'],breakdown:['🕳 breakdown','r'],reversal_up:['↩ bounce','g'],reversal_down:['↪ rollover','r'],
+  momentum_up:['📈 momentum','g'],momentum_down:['📉 momentum','r'],gap_up:['⬆ gap up','g'],gap_down:['⬇ gap down','r'],
+  volume_surge:['🔊 volume surge','y'],volatility:['⚡ big swings','y'],earnings:['📅 earnings · paused','y'],illiquid:['🧊 thin volume','y'],leveraged:['⚠ leveraged','y']};
+const chips = f => (f||[]).map(x => `<span class="chip ${FLAG[x]?.[1]||''}">${FLAG[x]?.[0]||esc(x)}</span>`).join('');
+const meter = a => { const n = a.samples||0, up = Math.round((a.p_up||0)*n); let h=''; for(let i=0;i<n;i++) h += `<i class="${i<up?'u':'d'}"></i>`; return `<div class="meter" title="${up} of ${n} simulated futures go up">${h}</div>`; };
+
+const TABS = [['today','Today'],['watch','Watchlist'],['market','Market'],['scanner','S&P 500'],['other','Crypto · FX · Gold'],['report','Report Card'],['backtest','Backtest Lab'],['paper','Paper Trading'],['journal','Journal'],['setup','Setup']];
+let LATEST = null, REPORT = null;
+
+function navRender(active){
+  $('#nav').innerHTML = TABS.map(([k,l]) => `<button class="${k===active?'on':''}" data-k="${k}">${l}</button>`).join('');
+  $('#nav').querySelectorAll('button').forEach(b => b.onclick = () => { location.hash = b.dataset.k; });
+}
+
+function setupCard(a){
+  const pl = a.plan || {};
+  return `<div class="card setup" data-t="${esc(a.ticker)}">
+    <div class="row"><div style="min-width:0"><div class="tk">${esc(a.ticker)} ${arrow(a.direction)}</div><div class="nm">${esc(a.name||a.sector||'')}</div></div>
+    <div style="text-align:right"><div class="score">${a.score}<small>/100</small></div><div class="mono ${cls(a.median_return)}" style="font-size:13px">${pct(a.median_return)}</div></div></div>
+    ${meter(a)}
+    <div class="sub mono">${Math.round(a.agreement*a.samples)}/${a.samples} futures agree · ${pl.side==='short'?'SHORT':'LONG'} · R:R ${pl.rr!=null?pl.rr.toFixed(1):'—'}</div>
+    <div class="kv"><div><span>Entry</span><b>${px(pl.entry_low)}–${px(pl.entry_high)}</b></div><div><span>Stop</span><b class="dn">${px(pl.stop)}</b></div><div><span>Target</span><b class="up">${px(pl.target)}</b></div></div>
+    <div class="chips" style="margin-top:10px">${chips(a.flags)}</div></div>`;
+}
+function bindSetups(root){ (root||document).querySelectorAll('[data-t]').forEach(el => el.onclick = () => { location.hash = 't/' + el.dataset.t; }); }
+
+function rowsTable(list, cols){
+  if (!list || !list.length) return '<div class="empty">Nothing here yet.</div>';
+  return `<div class="tbl"><table><thead><tr>${cols.map(c=>`<th class="${c[2]||''}">${c[0]}</th>`).join('')}</tr></thead><tbody>${
+    list.map(a => `<tr class="click" data-t="${esc(a.ticker)}">${cols.map(c=>`<td class="${c[2]||''}">${c[1](a)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+const STD_COLS = [
+  ['Ticker', a => `<b>${esc(a.ticker)}</b> <span class="muted" style="font-size:11.5px">${esc((a.name||'').slice(0,22))}</span>`],
+  ['Call', a => `${arrow(a.direction)} <span class="mono ${cls(a.median_return)}">${pct(a.median_return)}</span>`, 'n'],
+  ['Agree', a => `${Math.round(a.agreement*a.samples)}/${a.samples}`, 'n'],
+  ['Score', a => `<span class="gold-t">${a.score}</span>`, 'n'],
+  ['Last', a => px(a.last_close), 'n'],
+  ['Week range', a => a.ranges ? `${px(a.ranges.week.low)} – ${px(a.ranges.week.high)}` : '—', 'n'],
+  ['Signals', a => chips(a.flags)]
+];
+
+/* ───────── TODAY ───────── */
+async function viewToday(){
+  const L = LATEST;
+  if (!L) return setupNeeded();
+  const m = L.mood || {}, v = L.vix || {};
+  let h = `<div class="grid g4 keep2">
+    <div class="card"><h3>Market mood</h3><div class="hero ${m.label==='RISK-ON'?'up':m.label==='RISK-OFF'?'dn':'gold'}" style="font-size:30px">${esc(m.label||'—')}</div>
+      <div class="gauge"><b style="width:${(m.pct_up||0)*100}%"></b></div><div class="sub">${pct0(m.pct_up)} of ${m.n||0} stocks predicted ▲ · avg ${pct(m.avg_return)}</div></div>
+    <div class="card"><h3>VIX · fear gauge</h3><div class="hero" style="font-size:30px">${px(v.level)}</div><div class="sub">next week ${v.direction?arrow(v.direction):''} <span class="mono ${cls(v.median_return)}">${pct(v.median_return)}</span> · ${v.direction==='up'?'fear rising':'fear easing'}</div></div>
+    <div class="card"><h3>Report card</h3><div class="hero gold" style="font-size:30px">${L.report?.hit_rate!=null?pct0(L.report.hit_rate):'—'}</div><div class="sub">${L.report?.n?`right on ${L.report.n} graded calls`:`${L.report?.pending||0} calls waiting to be graded`}</div></div>
+    <div class="card"><h3>Paper account</h3><div class="hero" style="font-size:30px">${L.paper?money(L.paper.equity):'—'}</div><div class="sub">${L.paper?`${pct(L.paper.return)} vs SPY ${pct(L.paper.spy_return)}`:'starts after first scan'}</div></div>
+  </div>`;
+  h += `<div class="sec-title">Indices <small>next ${L.horizon} trading days</small></div><div class="grid g4 keep2">${(L.indices||[]).map(a=>`
+    <div class="card setup" data-t="${esc(a.ticker)}"><div class="row"><div><div class="tk">${esc(a.ticker)}</div><div class="nm">${esc(a.name||'')}</div></div><div style="text-align:right">${arrow(a.direction)} <b class="mono ${cls(a.median_return)}">${pct(a.median_return)}</b></div></div>
+    ${meter(a)}<div class="sub mono">${px(a.ranges.week.low)} – ${px(a.ranges.week.high)} · score ${a.score}</div></div>`).join('')}</div>`;
+  h += `<div class="sec-title">Top long setups <small>reward ≥ 2× risk · earnings excluded</small></div>
+    <div class="grid g3">${(L.top_long||[]).slice(0,6).map(setupCard).join('') || '<div class="empty">No qualifying long setups today.</div>'}</div>
+    <div class="sec-title">Top short setups</div>
+    <div class="grid g3">${(L.top_short||[]).slice(0,6).map(setupCard).join('') || '<div class="empty">No qualifying short setups today.</div>'}</div>`;
+  const S = L.signals || {};
+  const sigBlock = (k, title) => (S[k]||[]).length ? `<div class="card"><h3>${title} <span class="r">${S[k].length}</span></h3>${(S[k]||[]).slice(0,8).map(a=>`<div class="row click" data-t="${esc(a.ticker)}" style="padding:5px 0;cursor:pointer"><b>${esc(a.ticker)}</b><span class="mono ${cls(a.median_return)}">${pct(a.median_return)} · ${a.score}</span></div>`).join('')}</div>` : '';
+  const blocks = [['breakout','🚀 Breakouts'],['breakdown','🕳 Breakdowns'],['reversal_up','↩ Bounce candidates'],['reversal_down','↪ Rollover risk'],['momentum_up','📈 Momentum up'],['gap_up','⬆ Gap up calls'],['gap_down','⬇ Gap down calls'],['volume_surge','🔊 Volume surges'],['volatility','⚡ Big swings ahead']].map(([k,t])=>sigBlock(k,t)).join('');
+  if (blocks) h += `<div class="sec-title">Signals</div><div class="grid g3">${blocks}</div>`;
+  if ((L.aligned||[]).length) h += `<div class="sec-title">All timeframes agree <small>1-hour · daily · weekly point the same way</small></div>${rowsTable(L.aligned, STD_COLS)}`;
+  if ((L.earnings_paused||[]).length) h += `<div class="sec-title">Paused for earnings</div><div class="warnbox">Charts can't see earnings surprises, so these signals are switched off until after the report: ${L.earnings_paused.map(a=>`<b>${esc(a.ticker)}</b> (${esc(a.earnings)})`).join(', ')}</div>`;
+  if (L.portfolio) {
+    const P = L.portfolio;
+    h += `<div class="sec-title">Your portfolio <small>dollar amounts stay private — sent to Telegram only</small></div><div class="grid g2">
+      <div class="card"><h3>Predicted next ${L.horizon} days</h3><div class="hero ${cls(P.median_return)}">${pct(P.median_return)}</div><div class="sub">${pct0(P.p_down)} chance of a down week</div>
+      ${P.hedge?`<div class="warnbox" style="margin-top:12px">🛡 Hedge suggested: your holdings move ${P.hedge.beta.toFixed(2)}× with ${esc(P.hedge.index)}. Consider ${esc(P.hedge.inverse_etf)} or ${esc(P.hedge.index)} puts. Details in Telegram.</div>`:''}</div>
+      <div class="card"><h3>By holding</h3>${P.holdings.map(x=>`<div class="hbar"><span class="mono">${esc(x.ticker)} <span class="muted">${pct0(x.weight)}</span></span>${divBar(x.ret, .1)}<span class="mono ${cls(x.ret)}" style="text-align:right">${pct(x.ret)}</span></div>`).join('')}</div></div>`;
+  }
+  $('#view').innerHTML = h; bindSetups($('#view'));
+}
+
+function divBar(v, maxAbs){
+  const w = Math.min(Math.abs(v||0)/maxAbs, 1) * 50;
+  const pos = (v||0) >= 0;
+  return `<div class="track"><div class="mid"></div><b style="${pos?`left:50%`:`left:${50-w}%`};width:${w}%;background:${pos?'var(--up)':'var(--dn)'}"></b></div>`;
+}
+
+/* ───────── WATCHLIST ───────── */
+async function viewWatch(){
+  const L = LATEST; if (!L) return setupNeeded();
+  const W = L.watchlist || [];
+  $('#view').innerHTML = `<div class="sec-title">Watchlist <small>edit in app/config.yaml or Telegram: /watch add TSLA</small></div>
+    <div class="grid g3">${W.map(setupCard).join('')}</div>
+    <div class="sec-title">Table view</div>${rowsTable(W, STD_COLS.concat([['TF 1h·1d·1w', a => ['1h','1d','1wk'].map(k=>a.timeframes?.[k]?arrow(a.timeframes[k]):'·').join(' ')]]))}
+    <div class="sec-title">Leveraged ETFs <small>daily resets magnify swings — size down</small></div>${rowsTable(L.leveraged, STD_COLS)}`;
+  bindSetups($('#view'));
+}
+
+/* ───────── MARKET ───────── */
+function heatColor(r){
+  const t = Math.min(Math.abs(r)/0.05, 1);
+  const a = 0.18 + 0.72*t;
+  return r >= 0 ? `rgba(31,158,137,${a})` : `rgba(224,86,91,${a})`;
+}
+function heatmapHTML(hm){
+  if (!hm || !hm.length) return '<div class="empty">Heatmap appears after the S&P 500 scan runs.</div>';
+  const by = {}; hm.forEach(x => (by[x.s] = by[x.s] || []).push(x));
+  return Object.entries(by).sort((a,b)=>b[1].length-a[1].length).map(([s, xs]) => `<div style="margin-bottom:14px"><div class="sub mono" style="margin-bottom:6px;letter-spacing:.06em">${esc(s.toUpperCase())} · ${xs.length}</div>
+    <div class="heat">${xs.sort((a,b)=>b.r-a.r).map(x=>`<div data-t="${esc(x.t)}" style="background:${heatColor(x.r)}" title="${esc(x.t)} ${pct(x.r)} · score ${x.sc}">${esc(x.t)}<small>${x.r>=0?'▲':'▼'} ${pct(x.r)}</small></div>`).join('')}</div></div>`).join('')
+    + `<div class="legend"><span><i style="background:var(--dn)"></i>predicted down</span><span><i style="background:var(--up)"></i>predicted up</span><span>stronger color = bigger move (±5%+)</span></div>`;
+}
+async function viewMarket(){
+  const L = LATEST; if (!L) return setupNeeded();
+  const sec = L.sectors || [];
+  const mx = Math.max(0.01, ...sec.map(s=>Math.abs(s.median_return)));
+  let h = `<div class="sec-title">Sector rotation <small>which sectors Kronos expects to lead next week</small></div>
+    <div class="card">${sec.map((s,i)=>`<div class="hbar"><span><b class="mono">${i+1}.</b> ${esc(s.name)} <span class="muted mono" style="font-size:11px">${esc(s.etf)}</span></span>${divBar(s.median_return, mx)}<span class="mono ${cls(s.median_return)}" style="text-align:right">${s.median_return>=0?'▲':'▼'} ${pct(s.median_return)}</span></div>`).join('') || '<div class="empty">No sector data.</div>'}</div>`;
+  h += `<div class="sec-title">Heatmap <small>${L.scanner_asof?'S&P 500 scan '+ago(L.scanner_asof):'watchlist + sectors'}</small></div><div class="card">${heatmapHTML(L.heatmap)}</div>`;
+  h += `<div class="sec-title">Correlation splits <small>stocks that usually move together, now predicted to split</small></div>`;
+  h += (L.correlations||[]).length ? `<div class="card"><div class="tbl"><table><thead><tr><th>Pair</th><th class="n">90d corr</th><th class="n">Call A</th><th class="n">Call B</th></tr></thead><tbody>${L.correlations.map(c=>`<tr><td><b>${esc(c.a)}</b> / <b>${esc(c.b)}</b></td><td class="n">${c.corr.toFixed(2)}</td><td class="n">${arrow(c.a_dir)} ${pct(c.a_ret)}</td><td class="n">${arrow(c.b_dir)} ${pct(c.b_ret)}</td></tr>`).join('')}</tbody></table></div></div>` : '<div class="empty">No unusual splits right now.</div>';
+  $('#view').innerHTML = h; bindSetups($('#view'));
+}
+
+async function viewScanner(){
+  const S = await get('scanner.json');
+  if (!S) { $('#view').innerHTML = '<div class="empty">The S&P 500 scanner runs overnight (Actions → “S&P 500 overnight scanner”). Results show up here after the first run.</div>'; return; }
+  const m = S.mood || {};
+  $('#view').innerHTML = `<div class="grid g3"><div class="card"><h3>Scanned</h3><div class="hero">${S.n}</div><div class="sub">stocks · ${esc(S.model)} · ${ago(S.generated)}</div></div>
+    <div class="card"><h3>Breadth</h3><div class="hero ${m.pct_up>=.5?'up':'dn'}">${pct0(m.pct_up)}</div><div class="sub">predicted up · ${m.breakouts||0} breakouts · ${m.breakdowns||0} breakdowns</div></div>
+    <div class="card"><h3>Mood</h3><div class="hero gold" style="font-size:34px">${esc(m.label||'—')}</div><div class="sub">avg predicted move ${pct(m.avg_return)}</div></div></div>
+    <div class="sec-title">Strongest up calls</div>${rowsTable(S.top_long, STD_COLS)}
+    <div class="sec-title">Strongest down calls</div>${rowsTable(S.top_short, STD_COLS)}
+    <div class="sec-title">Heatmap</div><div class="card">${heatmapHTML(S.heatmap)}</div>`;
+  bindSetups($('#view'));
+}
+
+async function viewOther(){
+  const L = LATEST; if (!L) return setupNeeded();
+  const C = await get('crypto_hourly.json');
+  $('#view').innerHTML = `<div class="sec-title">Crypto · next 24 hours <small>${C?'hourly model · '+ago(C.generated):'runs every 2 hours'}</small></div>
+    ${C ? rowsTable(C.rows.map(r=>({...r,_h:1})), STD_COLS) : '<div class="empty">Hourly crypto board appears after its first run.</div>'}
+    <div class="sec-title">Crypto · next ${L.horizon} days</div>${rowsTable(L.crypto, STD_COLS)}
+    <div class="sec-title">Forex</div>${rowsTable(L.forex, STD_COLS)}
+    <div class="sec-title">Gold · oil · metals</div>${rowsTable(L.commodities, STD_COLS)}`;
+  bindSetups($('#view'));
+}
+
+/* ───────── FORECAST CHART (SVG candles + bands + hover) ───────── */
+function forecastChart(ch, a, opts={}){
+  const W = Math.max(340, Math.min(900, (window.innerWidth||900) - 64)), H = opts.h || (W < 600 ? 330 : 380), padL = 8, padR = 64, padT = 14, padB = 26;
+  const hist = ch.history.slice(-(opts.bars||(W < 600 ? 40 : 70)));
+  const fut = ch.future, med = ch.median, B = ch.bands;
+  const nH = hist.length, nF = fut.length, N = nH + nF;
+  let lo = Infinity, hi = -Infinity;
+  hist.forEach(r => { lo = Math.min(lo, r[3]); hi = Math.max(hi, r[2]); });
+  B['10'].forEach(v => lo = Math.min(lo, v)); B['90'].forEach(v => hi = Math.max(hi, v));
+  med.forEach(r => { lo = Math.min(lo, r[2]); hi = Math.max(hi, r[1]); });
+  const pl = a.plan; if (pl && pl.valid && opts.plan !== false){ [pl.stop, pl.target].forEach(v => { lo = Math.min(lo, v); hi = Math.max(hi, v); }); }
+  const pad = (hi - lo) * 0.06; lo -= pad; hi += pad;
+  const xw = (W - padL - padR) / N, cx = i => padL + xw * (i + 0.5), y = v => padT + (H - padT - padB) * (1 - (v - lo) / (hi - lo));
+  const bw = Math.max(2, xw * 0.62);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(a.ticker)} forecast chart">`;
+  for (let k = 0; k <= 4; k++){ const v = lo + (hi - lo) * k / 4; s += `<line x1="${padL}" x2="${W-padR}" y1="${y(v)}" y2="${y(v)}" stroke="#222228" stroke-width="1"/><text x="${W-padR+6}" y="${y(v)+4}" fill="#7D7769" font-size="11" font-family="JetBrains Mono">${px(v)}</text>`; }
+  const x0 = padL + xw * nH;
+  s += `<rect x="${x0}" y="${padT}" width="${W-padR-x0}" height="${H-padT-padB}" fill="rgba(191,154,63,.04)"/><line x1="${x0}" x2="${x0}" y1="${padT}" y2="${H-padB}" stroke="#33333B" stroke-dasharray="3 3"/>`;
+  s += `<text x="${x0+6}" y="${H-padB-8}" fill="#BF9A3F" font-size="11" font-family="JetBrains Mono" letter-spacing="1">FORECAST</text>`;
+  const lastC = hist[nH-1][4];
+  const area = (a1, a2, fill) => { let p = `M${cx(nH-1)},${y(lastC)} `; a2.forEach((v,i)=> p += `L${cx(nH+i)},${y(v)} `); for (let i = a1.length-1; i >= 0; i--) p += `L${cx(nH+i)},${y(a1[i])} `; return `<path d="${p}Z" fill="${fill}"/>`; };
+  s += area(B['10'], B['90'], 'rgba(173,138,54,.13)') + area(B['25'], B['75'], 'rgba(173,138,54,.22)');
+  (ch.paths||[]).forEach(p => { s += `<polyline points="${[ [nH-1,lastC], ...p.map((v,i)=>[nH+i,v]) ].map(([i,v])=>`${cx(i)},${y(v)}`).join(' ')}" fill="none" stroke="rgba(217,184,101,.22)" stroke-width="1"/>`; });
+  hist.forEach((r, i) => { const [ , o, h, l, c] = r, col = c >= o ? '#1F9E89' : '#E0565B';
+    s += `<line x1="${cx(i)}" x2="${cx(i)}" y1="${y(h)}" y2="${y(l)}" stroke="${col}" stroke-width="1"/><rect x="${cx(i)-bw/2}" y="${y(Math.max(o,c))}" width="${bw}" height="${Math.max(1, Math.abs(y(o)-y(c)))}" fill="${col}" rx="1"/>`; });
+  med.forEach((r, i) => { const [o, h, l, c] = r, j = nH + i;
+    s += `<line x1="${cx(j)}" x2="${cx(j)}" y1="${y(h)}" y2="${y(l)}" stroke="#D9B865" stroke-width="1.2"/><rect x="${cx(j)-bw/2}" y="${y(Math.max(o,c))}" width="${bw}" height="${Math.max(1.5, Math.abs(y(o)-y(c)))}" fill="${c>=o?'#0B0B0D':'#AD8A36'}" stroke="#D9B865" stroke-width="1.2" rx="1"/>`; });
+  if (pl && pl.valid && opts.plan !== false){
+    [[pl.target,'TARGET','#1F9E89'],[pl.entry,'ENTRY','#B5AE9E'],[pl.stop,'STOP','#E0565B']].forEach(([v,lab,col]) => {
+      s += `<line x1="${x0}" x2="${W-padR}" y1="${y(v)}" y2="${y(v)}" stroke="${col}" stroke-dasharray="5 4" stroke-width="1.2"/><text x="${W-padR-4}" y="${y(v)-5}" fill="${col}" font-size="10" font-weight="600" text-anchor="end" font-family="JetBrains Mono">${lab} ${px(v)}</text>`; });
+  }
+  const lab = i => { const d = i < nH ? hist[i][0] : fut[i-nH]; return d; };
+  [0, Math.floor(nH/2), nH-1, N-1].forEach(i => s += `<text x="${cx(i)}" y="${H-8}" fill="#7D7769" font-size="11" text-anchor="middle" font-family="JetBrains Mono">${dateS(lab(i))}</text>`);
+  s += `<line id="xh" x1="0" x2="0" y1="${padT}" y2="${H-padB}" stroke="#7D7769" stroke-width="1" opacity="0"/><rect id="hit" x="${padL}" y="0" width="${W-padL-padR}" height="${H}" fill="transparent"/></svg>`;
+  const id = 'c' + Math.random().toString(36).slice(2);
+  setTimeout(() => {
+    const root = document.getElementById(id); if (!root) return;
+    const svg = root.querySelector('svg'), tip = root.querySelector('.tip'), xh = svg.querySelector('#xh');
+    svg.querySelector('#hit').addEventListener('mousemove', ev => {
+      const r = svg.getBoundingClientRect(), sx = (ev.clientX - r.left) / r.width * W;
+      const i = Math.max(0, Math.min(N-1, Math.floor((sx - padL) / xw)));
+      xh.setAttribute('x1', cx(i)); xh.setAttribute('x2', cx(i)); xh.setAttribute('opacity', 1);
+      let t;
+      if (i < nH){ const [d,o,h,l,c,v] = hist[i]; t = `<b>${dateS(d)}</b><br>O ${px(o)}  H ${px(h)}<br>L ${px(l)}  C ${px(c)}<br><span class="muted">vol ${Math.round(v).toLocaleString()}</span>`; }
+      else { const k = i - nH, [o,h,l,c] = med[k]; t = `<b class="gold-t">${dateS(fut[k])} · forecast</b><br>median close ${px(c)} <span class="${cls(c/lastC-1)}">${pct(c/lastC-1)}</span><br>likely ${px(B['25'][k])} – ${px(B['75'][k])}<br>wide ${px(B['10'][k])} – ${px(B['90'][k])}`; }
+      tip.innerHTML = t; tip.style.opacity = 1;
+      const left = (cx(i) / W) * r.width; tip.style.left = Math.min(left + 14, r.width - tip.offsetWidth - 4) + 'px'; tip.style.top = '8px';
+    });
+    svg.querySelector('#hit').addEventListener('mouseleave', () => { tip.style.opacity = 0; xh.setAttribute('opacity', 0); });
+  });
+  return `<div class="chart" id="${id}">${s}<div class="tip"></div></div>
+    <div class="legend"><span><i style="background:#1F9E89"></i>▲ actual up candle</span><span><i style="background:#E0565B"></i>▼ actual down candle</span><span><i style="background:#D9B865"></i>median forecast</span><span><i style="background:rgba(173,138,54,.5);height:8px"></i>likely (25–75%)</span><span><i style="background:rgba(173,138,54,.25);height:8px"></i>wide (10–90%)</span></div>`;
+}
+
+/* ───────── TICKER DETAIL ───────── */
+async function viewTicker(t){
+  $('#view').innerHTML = '<div class="loading">LOADING ' + esc(t) + '…</div>';
+  const a = await get('t/' + safe(t) + '.json') || await get('t/' + safe(t) + '_1h.json');
+  if (!a){ $('#view').innerHTML = `<span class="back" onclick="history.back()">← BACK</span><div class="empty">${esc(t)} isn't in the scanned list. Add it with Telegram <code>/watch add ${esc(t)}</code> or ask the bot <code>/forecast ${esc(t)}</code>.</div>`; return; }
+  REPORT = REPORT || await get('report.json');
+  const lb = (REPORT?.leaderboard||[]).find(x => x.key === a.ticker);
+  const pl = a.plan, r = a.ranges;
+  const acct = store.get('oracle_acct', 10000), risk = store.get('oracle_risk', 1);
+  const tfBtns = [['chart','Daily'], a.chart_hourly && ['chart_hourly','1 Hour'], a.chart_weekly && ['chart_weekly','Weekly']].filter(Boolean);
+  let h = `<span class="back" onclick="history.back()">← BACK</span>
+  <div class="row" style="flex-wrap:wrap;align-items:flex-end;margin-bottom:12px"><div><div class="tk" style="font-size:34px">${esc(a.ticker)} ${arrow(a.direction)}</div><div class="sub">${esc(a.name||'')} · ${esc(a.sector||a.cls)} · last ${px(a.last_close)} · as of ${dateS(a.asof)} · ${esc(a.model||'')}</div></div>
+  <div style="text-align:right"><div class="score" style="font-size:40px">${a.score}<small>/100 KRONOS SCORE</small></div><div class="mono ${cls(a.median_return)}">${pct(a.median_return)} median over ${a.horizon} ${a.interval==='1h'?'hours':'days'}</div></div></div>
+  <div class="card"><div class="row" style="margin-bottom:10px;flex-wrap:wrap"><h3 style="margin:0">Forecast</h3><div class="seg" id="tf">${tfBtns.map((b,i)=>`<button data-k="${b[0]}" class="${i?'':'on'}">${b[1]}</button>`).join('')}</div></div><div id="chartBox">${forecastChart(a.chart, a)}</div></div>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card"><h3>Agreement meter</h3><div class="hero ${a.direction==='up'?'up':'dn'}" style="font-size:36px">${a.agree_count}/${a.samples}</div>${meter(a)}<div class="sub">simulated futures end ${a.direction==='up'?'higher':'lower'} · chance up ${pct0(a.p_up)}</div>
+      <div class="kv"><div><span>Worst 10%</span><b class="${cls(a.p10_return)}">${pct(a.p10_return)}</b></div><div><span>Median</span><b class="${cls(a.median_return)}">${pct(a.median_return)}</b></div><div><span>Best 10%</span><b class="${cls(a.p90_return)}">${pct(a.p90_return)}</b></div></div></div>
+    <div class="card"><h3>Expected range</h3>
+      ${[['Next '+(a.interval==='1h'?'hour':'day'),r.next],['This week',r.week],['This month',r.month]].filter(x=>x[1]).map(([l,x])=>`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><span class="sub">${l}</span><b class="mono">${px(x.low)} – ${px(x.high)}</b></div>`).join('')}
+      <div class="sub" style="margin-top:8px">80% of simulated paths stay inside these ranges.</div></div>
+    <div class="card"><h3>Timeframes & 2nd opinion</h3>
+      <div class="row" style="padding:6px 0">${['1h','1d','1wk'].map(k=>`<div style="text-align:center;flex:1"><div class="sub mono">${k.toUpperCase()}</div><div style="font-size:20px">${a.timeframes?.[k]?arrow(a.timeframes[k]):'<span class="muted">·</span>'}</div></div>`).join('')}</div>
+      <div class="sub" style="margin:6px 0 10px">${a.aligned?'<b class="gold-t">All three timeframes agree.</b>':'Timeframes disagree — lower conviction.'}</div>
+      <div class="sub">RSI ${a.ensemble.rsi.toFixed(0)} · trend ${a.ensemble.trend} · MACD ${a.ensemble.macd} → <b class="${a.ensemble.agree>=2?'up':'dn'}">${a.ensemble.agree}/3 classic indicators agree</b></div></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>Trade plan <span class="r">${pl.valid?'<span class="up">valid setup</span>':'<span class="muted">reward < 2× risk — skip</span>'}</span></h3>
+      <div class="kv"><div><span>${pl.side==='short'?'Short':'Buy'} zone</span><b>${px(pl.entry_low)}–${px(pl.entry_high)}</b></div><div><span>Stop</span><b class="dn">${px(pl.stop)}</b></div><div><span>Target</span><b class="up">${px(pl.target)}</b></div>
+      <div><span>Risk : reward</span><b>1 : ${pl.rr!=null?pl.rr.toFixed(1):'—'}</b></div><div><span>Best entry</span><b>${dateS(pl.best_entry_date)}</b></div><div><span>Hold until</span><b>${dateS(pl.exit_date)}</b></div></div>
+      <h3 style="margin-top:16px">Position size</h3>
+      <div class="grid g2" style="gap:8px"><label class="sub">Account $<input class="f" id="acct" type="number" value="${acct}"></label><label class="sub">Risk per trade %<input class="f" id="risk" type="number" step="0.25" value="${risk}"></label></div>
+      <div class="kv" id="sizeOut"></div></div>
+    <div class="card"><h3>Options idea</h3>${a.option?`<div class="kv"><div><span>Contract</span><b>${esc(a.option.type)} ${px(a.option.strike)}</b></div><div><span>Expiry</span><b>${esc(a.option.expiry)}</b></div><div><span>Mid price</span><b>$${a.option.mid.toFixed(2)}</b></div><div><span>Breakeven</span><b>${px(a.option.breakeven)}</b></div><div><span>Implied vol</span><b>${pct0(a.option.iv)}</b></div><div><span>Open interest</span><b>${a.option.open_interest.toLocaleString()}</b></div></div><div class="sub" style="margin-top:8px">${a.option.target_beats_breakeven?'Target clears breakeven.':'<span class="dn">Target does NOT clear breakeven — the stock alone is the better trade.</span>'} Cost per contract ≈ $${(a.option.mid*100).toFixed(0)}.</div>`:'<div class="empty">Shown for valid watchlist setups with a liquid option chain.</div>'}
+      <h3 style="margin-top:16px">Context</h3><div class="chips">${chips(a.flags)}${a.earnings?`<span class="chip y">📅 earnings ${esc(a.earnings)}</span>`:''}</div>
+      <div class="sub" style="margin-top:10px">${lb?`Kronos has been right on <b class="gold-t">${pct0(lb.hit_rate)}</b> of ${lb.n} graded ${esc(a.ticker)} calls.`:'Not enough graded calls on this ticker yet.'}</div></div>
+  </div>`;
+  if ((a.news||[]).length) h += `<div class="sec-title">Headlines</div><div class="card news">${a.news.map(n=>`<a href="${esc(/^https?:\/\//i.test(n.url||'') ? n.url : '#')}" target="_blank" rel="noopener">${esc(n.title)}<small>${esc(n.source||'')} · ${n.time?ago(n.time):''}</small></a>`).join('')}</div>`;
+  $('#view').innerHTML = h;
+  const size = () => {
+    const A = +$('#acct').value || 0, R = (+$('#risk').value || 0) / 100; store.set('oracle_acct', A); store.set('oracle_risk', +$('#risk').value);
+    const per = Math.abs(pl.entry - pl.stop), sh = per > 0 ? Math.floor(Math.min(A*R/per, A/pl.entry)) : 0;
+    $('#sizeOut').innerHTML = `<div><span>Shares</span><b>${sh.toLocaleString()}</b></div><div><span>$ at risk</span><b class="dn">${money(sh*per)}</b></div><div><span>$ if target</span><b class="up">${money(sh*Math.abs(pl.target-pl.entry))}</b></div>`;
+  };
+  $('#acct').oninput = size; $('#risk').oninput = size; size();
+  document.querySelectorAll('#tf button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('#tf button').forEach(x => x.classList.toggle('on', x === b));
+    $('#chartBox').innerHTML = forecastChart(a[b.dataset.k], a, {plan: b.dataset.k === 'chart'});
+  });
+}
+
+/* ───────── LINE CHART (equity, hit rate) ───────── */
+function lineChart(series, opts={}){
+  const W = Math.max(340, Math.min(900, (window.innerWidth||900) - 64)), H = opts.h || (W < 600 ? 220 : 260), padL = 8, padR = 58, padT = 12, padB = 24;
+  const n = Math.max(...series.map(s => s.data.length)); if (!n) return '<div class="empty">No data yet.</div>';
+  let lo = Infinity, hi = -Infinity; series.forEach(s => s.data.forEach(v => { if (v != null){ lo = Math.min(lo, v); hi = Math.max(hi, v); } }));
+  if (opts.min != null) lo = Math.min(lo, opts.min); if (opts.max != null) hi = Math.max(hi, opts.max);
+  if (hi === lo){ hi += 1; lo -= 1; } const pd = (hi-lo)*.06; lo -= pd; hi += pd;
+  const x = i => padL + (W-padL-padR) * (n === 1 ? .5 : i/(n-1)), y = v => padT + (H-padT-padB)*(1-(v-lo)/(hi-lo));
+  const fmt = opts.fmt || (v => v.toFixed(2));
+  let s = `<svg viewBox="0 0 ${W} ${H}">`;
+  for (let k=0;k<=4;k++){ const v = lo+(hi-lo)*k/4; s += `<line x1="${padL}" x2="${W-padR}" y1="${y(v)}" y2="${y(v)}" stroke="#222228"/><text x="${W-padR+6}" y="${y(v)+4}" fill="#7D7769" font-size="11" font-family="JetBrains Mono">${fmt(v)}</text>`; }
+  if (opts.ref != null) s += `<line x1="${padL}" x2="${W-padR}" y1="${y(opts.ref)}" y2="${y(opts.ref)}" stroke="#7D7769" stroke-dasharray="4 4"/>`;
+  series.forEach(se => { const pts = se.data.map((v,i)=> v==null?null:`${x(i)},${y(v)}`).filter(Boolean).join(' '); s += `<polyline points="${pts}" fill="none" stroke="${se.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`; });
+  if (opts.labels){ [0, Math.floor((n-1)/2), n-1].forEach(i => s += `<text x="${x(i)}" y="${H-6}" fill="#7D7769" font-size="11" text-anchor="middle" font-family="JetBrains Mono">${esc(opts.labels[i]||'')}</text>`); }
+  s += `<line class="xh" y1="${padT}" y2="${H-padB}" stroke="#7D7769" opacity="0"/><rect class="hit" x="${padL}" y="0" width="${W-padL-padR}" height="${H}" fill="transparent"/></svg>`;
+  const id = 'l' + Math.random().toString(36).slice(2);
+  setTimeout(() => { const root = document.getElementById(id); if (!root) return; const svg = root.querySelector('svg'), tip = root.querySelector('.tip'), xh = svg.querySelector('.xh');
+    svg.querySelector('.hit').addEventListener('mousemove', ev => { const r = svg.getBoundingClientRect(), sx = (ev.clientX-r.left)/r.width*W; const i = Math.max(0, Math.min(n-1, Math.round((sx-padL)/(W-padL-padR)*(n-1))));
+      xh.setAttribute('x1', x(i)); xh.setAttribute('x2', x(i)); xh.setAttribute('opacity', 1);
+      tip.innerHTML = `<b>${esc(opts.labels?.[i]||'#'+(i+1))}</b>` + series.map(se => `<br><span style="color:${se.color}">━</span> ${esc(se.name)}: ${se.data[i]==null?'—':fmt(se.data[i])}`).join('');
+      tip.style.opacity = 1; tip.style.left = Math.min(x(i)/W*r.width + 12, r.width - tip.offsetWidth - 4) + 'px'; tip.style.top = '6px'; });
+    svg.querySelector('.hit').addEventListener('mouseleave', () => { tip.style.opacity = 0; xh.setAttribute('opacity', 0); }); });
+  return `<div class="chart" id="${id}">${s}<div class="tip"></div></div>` + (series.length > 1 ? `<div class="legend">${series.map(se=>`<span><i style="background:${se.color}"></i>${esc(se.name)}</span>`).join('')}</div>` : '');
+}
+
+/* ───────── REPORT CARD ───────── */
+async function viewReport(){
+  const R = REPORT = await get('report.json');
+  if (!R || !R.n){ $('#view').innerHTML = `<div class="empty">No graded calls yet${R?.pending?` — <b>${R.pending}</b> predictions are waiting for their ${'5-day'} window to finish`:''}. The report card fills in automatically as each forecast comes due.</div>`; return; }
+  const tbl = (rows, label) => rows && rows.length ? `<div class="tbl"><table><thead><tr><th>${label}</th><th class="n">Calls</th><th class="n">Hit rate</th><th class="n">Avg move in called direction</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.key)}</td><td class="n">${r.n}</td><td class="n ${r.hit_rate>=.5?'up':'dn'}">${pct0(r.hit_rate)}</td><td class="n ${cls(r.avg_move)}">${pct(r.avg_move,2)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Not enough calls yet.</div>';
+  const st = R.streak || {}, P = R.plans || {};
+  let h = `<div class="grid g4 keep2">
+    <div class="card"><h3>Hit rate</h3><div class="hero gold">${pct0(R.hit_rate)}</div><div class="sub">direction right on ${R.n} graded calls · coin flip = 50%</div></div>
+    <div class="card"><h3>High-score calls</h3><div class="hero ${R.hit_rate_high>=.5?'up':'dn'}">${pct0(R.hit_rate_high)}</div><div class="sub">score 75+ · ${R.n_high} calls</div></div>
+    <div class="card"><h3>Streak</h3><div class="hero ${st.current_type==='win'?'up':'dn'}">${st.current||0}${st.current_type==='win'?'W':'L'}</div><div class="sub">best ${st.longest_win||0}W · worst ${st.longest_loss||0}L (score 75+)</div></div>
+    <div class="card"><h3>Trade plans</h3><div class="hero">${P.win_rate!=null?pct0(P.win_rate):'—'}</div><div class="sub">${P.target||0} hit target · ${P.stop||0} stopped · ${P.time||0} timed out · avg ${pct(P.avg_trade_return,2)}</div></div></div>`;
+  h += `<div class="grid g2" style="margin-top:14px"><div class="card"><h3>Calibration <span class="r">when it says X% sure, is it right X% of the time?</span></h3>${calibChart(R.calibration)}</div>
+    <div class="card"><h3>Signal decay <span class="r">accuracy by days ahead</span></h3>${barsChart((R.decay||[]).map(d=>({label:'day '+d.step, v:d.hit_rate, n:d.n})), .5)}</div></div>`;
+  if ((R.daily||[]).length > 1) h += `<div class="card" style="margin-top:14px"><h3>Rolling hit rate <span class="r">10-day average · dashed = coin flip</span></h3>${lineChart([{name:'hit rate', color:'#AD8A36', data:R.daily.map(d=>d.rolling)}], {labels:R.daily.map(d=>d.date), fmt:v=>Math.round(v*100)+'%', ref:.5, min:0.3, max:0.8})}</div>`;
+  const lb = R.leaderboard || [];
+  h += `<div class="grid g2" style="margin-top:14px"><div class="card"><h3>Predicts best</h3>${tbl(lb.slice(0,10),'Ticker')}</div><div class="card"><h3>Predicts worst</h3>${tbl(lb.slice(-10).reverse(),'Ticker')}</div></div>
+    <div class="grid g2" style="margin-top:14px"><div class="card"><h3>By sector</h3>${tbl(R.by_sector,'Sector')}</div><div class="card"><h3>By market mood (VIX)</h3>${tbl(R.by_regime,'Regime')}</div></div>
+    <div class="grid g3" style="margin-top:14px"><div class="card"><h3>By signal</h3>${tbl((R.signals||[]).map(s=>({key:s.signal,n:s.n,hit_rate:s.hit_rate})),'Signal')}</div><div class="card"><h3>By market</h3>${tbl(R.by_class,'Market')}</div><div class="card"><h3>By timeframe & model</h3>${tbl((R.by_interval||[]).concat(R.by_model||[]),'Group')}</div></div>
+    <div class="sec-title">Latest graded calls</div><div class="card"><div class="tbl"><table><thead><tr><th>Date</th><th>Ticker</th><th>TF</th><th class="n">Called</th><th class="n">Agree</th><th class="n">Actual</th><th class="n">Result</th></tr></thead><tbody>${(R.recent||[]).map(r=>`<tr><td class="mono">${dateS(r.asof)}</td><td><b>${esc(r.ticker)}</b></td><td class="mono muted">${esc(r.interval)}</td><td class="n">${arrow(r.direction)} ${pct(r.median_return)}</td><td class="n">${pct0(r.agreement)}</td><td class="n ${cls(r.actual_return)}">${pct(r.actual_return)}</td><td class="n">${String(r.correct).toLowerCase()==='true'?'<span class="up">✓ right</span>':'<span class="dn">✗ wrong</span>'}</td></tr>`).join('')}</tbody></table></div></div>`;
+  $('#view').innerHTML = h;
+}
+function calibChart(c){
+  if (!c || !c.length) return '<div class="empty">Needs graded calls.</div>';
+  const W = 420, H = 230, p = 34, x = v => p + (W-2*p)*(v-.5)/.5, y = v => H-p - (H-2*p)*v;
+  let s = `<svg viewBox="0 0 ${W} ${H}">`;
+  [0,.25,.5,.75,1].forEach(v => s += `<line x1="${p}" x2="${W-p}" y1="${y(v)}" y2="${y(v)}" stroke="#222228"/><text x="${p-6}" y="${y(v)+4}" fill="#7D7769" font-size="10" text-anchor="end" font-family="JetBrains Mono">${v*100}%</text>`);
+  [.5,.6,.7,.8,.9,1].forEach(v => s += `<text x="${x(v)}" y="${H-p+16}" fill="#7D7769" font-size="10" text-anchor="middle" font-family="JetBrains Mono">${v*100}%</text>`);
+  s += `<line x1="${x(.5)}" y1="${y(.5)}" x2="${x(1)}" y2="${y(1)}" stroke="#7D7769" stroke-dasharray="4 4"/>`;
+  s += `<polyline points="${c.map(b=>`${x(b.predicted)},${y(b.actual)}`).join(' ')}" fill="none" stroke="#AD8A36" stroke-width="2"/>`;
+  c.forEach(b => s += `<circle cx="${x(b.predicted)}" cy="${y(b.actual)}" r="${4+Math.min(6,Math.sqrt(b.n)/2)}" fill="#AD8A36" stroke="#131316" stroke-width="2"><title>${b.bucket}% sure → right ${Math.round(b.actual*100)}% (${b.n} calls)</title></circle>`);
+  return s + `</svg><div class="legend"><span><i style="background:#AD8A36"></i>actual hit rate</span><span><i style="background:#7D7769"></i>perfectly calibrated</span><span>dot size = number of calls</span></div>`;
+}
+function barsChart(rows, ref){
+  if (!rows.length) return '<div class="empty">Needs graded calls.</div>';
+  return rows.map(r => `<div class="hbar" style="grid-template-columns:70px 1fr 90px"><span class="mono sub">${esc(r.label)}</span><div class="track" style="background:#1B1B20;border-radius:3px"><b style="left:0;width:${Math.max(0,Math.min(1,r.v))*100}%;background:${r.v>=ref?'#AD8A36':'#5A5446'}"></b><div class="mid" style="left:${ref*100}%"></div></div><span class="mono" style="text-align:right">${pct0(r.v)} <span class="muted">(${r.n})</span></span></div>`).join('') + `<div class="legend"><span>line = 50% coin flip</span></div>`;
+}
+
+/* ───────── BACKTEST ───────── */
+async function viewBacktest(){
+  const I = await get('bt/index.json');
+  if (!I){ $('#view').innerHTML = `<div class="card"><h3>Backtest lab</h3><p class="sub" style="font-size:14px">Replays the last year as if you had followed Kronos — it only ever sees data from before each decision.</p><ol class="steps"><li>On GitHub open <b>Actions → Backtest lab (run manually)</b></li><li>Tap <b>Run workflow</b>, type tickers (or leave blank for your watchlist), tick <b>Model Battle</b> if you want mini vs small vs base</li><li>Results land here in ~20–60 min. Or in Telegram: <code>/backtest AAPL</code></li></ol></div>`; return; }
+  let h = `<div class="sec-title">Kronos vs buy-and-hold vs SMA 20/50 <small>${esc(I.model)} · ${ago(I.generated)}</small></div>
+    <div class="card"><div class="tbl"><table><thead><tr><th>Ticker</th><th class="n">Kronos</th><th class="n">Buy & hold</th><th class="n">SMA cross</th><th class="n">Max DD</th><th class="n">Sharpe</th><th class="n">Trades</th><th class="n">Win rate</th><th class="n">Direction hit</th></tr></thead><tbody>${I.rows.map(r=>`<tr class="click" data-bt="${esc(r.ticker)}"><td><b>${esc(r.ticker)}</b> ${r.beats_buy_hold?'<span class="chip g">beats B&H</span>':''}</td><td class="n ${cls(r.kronos)}">${pct(r.kronos)}</td><td class="n ${cls(r.buy_hold)}">${pct(r.buy_hold)}</td><td class="n ${cls(r.sma_cross)}">${pct(r.sma_cross)}</td><td class="n dn">${pct(r.max_dd)}</td><td class="n">${(r.sharpe||0).toFixed(2)}</td><td class="n">${r.n_trades}</td><td class="n">${pct0(r.win_rate)}</td><td class="n">${pct0(r.hit_rate)}</td></tr>`).join('')}</tbody></table></div></div><div id="btDetail"></div>`;
+  if ((I.battle||[]).length) h += `<div class="sec-title">Model battle</div><div class="card"><div class="tbl"><table><thead><tr><th>Model</th><th class="n">Direction hit</th><th class="n">Avg error</th><th class="n">Avg return</th><th class="n">Buy & hold</th><th class="n">Beat B&H</th></tr></thead><tbody>${I.battle.map((b,i)=>b.error?`<tr><td>${esc(b.model)}</td><td colspan="5" class="muted">${esc(b.error)}</td></tr>`:`<tr><td>${i===0?'🏆 ':''}<b>${esc(b.model.split('/').pop())}</b></td><td class="n">${pct0(b.hit_rate)}</td><td class="n">${pct(b.mae)}</td><td class="n ${cls(b.avg_return)}">${pct(b.avg_return)}</td><td class="n ${cls(b.avg_buy_hold)}">${pct(b.avg_buy_hold)}</td><td class="n">${b.beats_buy_hold}/${b.tickers}</td></tr>`).join('')}</tbody></table></div></div>`;
+  h += `<div class="sub" style="margin-top:12px">Run new backtests from GitHub → Actions → “Backtest lab”, or Telegram <code>/backtest TICKER</code>. What-if replay: <code>/replay AAPL 2025-03-14</code>.</div>`;
+  $('#view').innerHTML = h;
+  document.querySelectorAll('[data-bt]').forEach(el => el.onclick = async () => {
+    const r = await get('bt/' + safe(el.dataset.bt) + '.json'); if (!r) return;
+    $('#btDetail').innerHTML = `<div class="card" style="margin-top:14px"><h3>${esc(r.ticker)} · growth of $1 <span class="r">${r.n_forecasts} forecasts · ${r.n_trades} trades · threshold ${pct0(r.threshold)} agree</span></h3>${lineChart([{name:'Kronos',color:'#AD8A36',data:r.kronos.equity},{name:'Buy & hold',color:'#4C8DE0',data:r.buy_hold.equity},{name:'SMA 20/50',color:'#CF6F7F',data:r.sma_cross.equity}],{labels:r.dates, fmt:v=>'$'+v.toFixed(2), ref:1})}
+      <h3 style="margin-top:16px">Trades</h3>${r.trades.length?`<div class="tbl"><table><thead><tr><th>Date</th><th>Side</th><th class="n">Entry</th><th class="n">Exit</th><th class="n">Return</th><th class="n">Agree</th></tr></thead><tbody>${r.trades.slice().reverse().map(t=>`<tr><td class="mono">${esc(t.date)}</td><td>${t.side==='long'?'<span class="up">▲ long</span>':'<span class="dn">▼ short</span>'}</td><td class="n">${px(t.entry)}</td><td class="n">${px(t.exit)}</td><td class="n ${cls(t.return)}">${pct(t.return,2)}</td><td class="n">${pct0(t.agreement)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">No trade met the agreement threshold.</div>'}</div>`;
+    $('#btDetail').scrollIntoView({behavior:'smooth'});
+  });
+}
+
+/* ───────── PAPER ───────── */
+async function viewPaper(){
+  const P = await get('paper.json');
+  const at = LATEST?.autotrade || {};
+  if (!P || !P.summary){ $('#view').innerHTML = '<div class="empty">The paper account opens after the first daily scan with $100,000 of fake money.</div>'; return; }
+  const S = P.summary, eq = P.equity || [];
+  const base = eq[0]?.equity || 1, sb = eq.find(e=>e.spy)?.spy;
+  let h = `<div class="grid g4 keep2"><div class="card"><h3>Equity</h3><div class="hero gold">${money(S.equity)}</div><div class="sub ${cls(S.return)}">${pct(S.return)} since start</div></div>
+    <div class="card"><h3>vs S&P 500</h3><div class="hero ${cls((S.return||0)-(S.spy_return||0))}">${pct((S.return||0)-(S.spy_return||0))}</div><div class="sub">SPY ${pct(S.spy_return)} same period</div></div>
+    <div class="card"><h3>Closed trades</h3><div class="hero">${S.trades}</div><div class="sub">win rate ${pct0(S.win_rate)}</div></div>
+    <div class="card"><h3>Auto-trade (Alpaca)</h3><div class="hero" style="font-size:26px">${esc((at.status||'off').toUpperCase())}</div><div class="sub">${esc(at.mode||'')} ${esc(at.reason||'')}${(at.orders||[]).length?' · '+at.orders.length+' orders today':''}</div></div></div>`;
+  if (eq.length > 1) h += `<div class="card" style="margin-top:14px"><h3>Paper account vs SPY <span class="r">indexed to 100</span></h3>${lineChart([{name:'Paper (Kronos)',color:'#AD8A36',data:eq.map(e=>e.equity/base*100)},{name:'SPY',color:'#4C8DE0',data:eq.map(e=>sb&&e.spy?e.spy/sb*100:null)}],{labels:eq.map(e=>e.date), fmt:v=>v.toFixed(1), ref:100})}</div>`;
+  const pos = Object.entries(P.positions||{});
+  h += `<div class="sec-title">Open positions</div>${pos.length?`<div class="card"><div class="tbl"><table><thead><tr><th>Ticker</th><th>Side</th><th class="n">Shares</th><th class="n">Entry</th><th class="n">Now</th><th class="n">P&L</th><th class="n">Stop</th><th class="n">Target</th><th class="n">Day</th></tr></thead><tbody>${pos.map(([t,p])=>{const ch=(p.price/p.entry-1)*(p.side==='long'?1:-1);return `<tr class="click" data-t="${esc(t)}"><td><b>${esc(t)}</b></td><td>${p.side==='long'?'<span class="up">▲ long</span>':'<span class="dn">▼ short</span>'}</td><td class="n">${p.shares}</td><td class="n">${px(p.entry)}</td><td class="n">${px(p.price)}</td><td class="n ${cls(ch)}">${pct(ch,2)}</td><td class="n dn">${px(p.stop)}</td><td class="n up">${px(p.target)}</td><td class="n">${p.bars_held}/${p.hold_bars}</td></tr>`}).join('')}</tbody></table></div></div>`:'<div class="empty">No open positions.</div>'}`;
+  const cl = (P.closed||[]).slice().reverse().slice(0,50);
+  h += `<div class="sec-title">Closed trades</div>${cl.length?`<div class="card"><div class="tbl"><table><thead><tr><th>Closed</th><th>Ticker</th><th>Side</th><th class="n">Entry</th><th class="n">Exit</th><th>Why</th><th class="n">P&L</th></tr></thead><tbody>${cl.map(c=>`<tr><td class="mono">${dateS(c.closed)}</td><td><b>${esc(c.ticker)}</b></td><td>${esc(c.side)}</td><td class="n">${px(c.entry)}</td><td class="n">${px(c.exit)}</td><td>${c.exit_reason==='target'?'<span class="up">target</span>':c.exit_reason==='stop'?'<span class="dn">stop</span>':'time'}</td><td class="n ${cls(c.pnl)}">${money(c.pnl)} (${pct(c.return,1)})</td></tr>`).join('')}</tbody></table></div></div>`:'<div class="empty">No closed trades yet.</div>'}`;
+  $('#view').innerHTML = h; bindSetups($('#view'));
+}
+
+async function viewJournal(){
+  const J = await get('journal.json') || [];
+  $('#view').innerHTML = `<div class="sec-title">Trade journal <small>log trades from Telegram: /journal BUY AAPL 10 185.20 note</small></div>
+    ${J.length?`<div class="card"><div class="tbl"><table><thead><tr><th>When</th><th>Trade</th><th class="n">Qty</th><th class="n">Price</th><th>Kronos said</th><th>You</th><th>Note</th></tr></thead><tbody>${J.slice().reverse().map(r=>`<tr><td class="mono">${dateS(r.time)}</td><td><b>${esc(r.side)} ${esc(r.ticker)}</b></td><td class="n">${esc(r.qty)}</td><td class="n">${px(+r.price)}</td><td>${r.kronos_dir?arrow(r.kronos_dir)+' '+esc(r.kronos_agree)+' · '+esc(r.kronos_score):'<span class="muted">no call</span>'}</td><td>${String(r.followed)==='True'||r.followed===true?'<span class="up">with the call</span>':'<span class="dn">against the call</span>'}</td><td class="sub">${esc(r.note)}</td></tr>`).join('')}</tbody></table></div></div>`:'<div class="empty">No trades logged yet.</div>'}`;
+}
+
+function setupNeeded(){ location.hash = 'setup'; }
+async function viewSetup(){
+  $('#view').innerHTML = `<div class="grid g2"><div class="card"><h3>Go-live checklist</h3><ol class="steps">
+    <li><b>Turn on Actions.</b> GitHub → your kronos repo → <b>Actions</b> tab → “I understand my workflows, enable them”.</li>
+    <li><b>Telegram bot.</b> In Telegram message <code>@BotFather</code> → /newbot → copy the token. Message your new bot once, then open <code>api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> to find your chat id.</li>
+    <li><b>Add secrets.</b> Repo → Settings → Secrets and variables → Actions → New secret: <code>TELEGRAM_BOT_TOKEN</code>, <code>TELEGRAM_CHAT_ID</code>, and optionally <code>PORTFOLIO_HOLDINGS</code> (e.g. <code>AAPL:10,MSFT:5</code>).</li>
+    <li><b>First run.</b> Actions → “Daily scan (after the close)” → Run workflow. ~45–70 min the first time.</li>
+    <li><b>Optional:</b> <code>ALPACA_KEY_ID</code> + <code>ALPACA_SECRET_KEY</code> (free paper account at alpaca.markets) for auto-trading and a backup price feed. <code>HF_TOKEN</code> + <code>HF_USER</code> for monthly custom models.</li></ol></div>
+    <div class="card"><h3>Data source</h3><p class="sub">Forecast files are read from your GitHub repo so this page is always current — even when hosted on Netlify.</p>
+    <input class="f" id="src" value="${esc(SRC)}"><div class="row" style="margin-top:10px;justify-content:flex-start"><button class="btn gold" id="saveSrc">Save</button><button class="btn" id="resetSrc">Reset</button></div>
+    <h3 style="margin-top:20px">Schedule (Eastern)</h3><div class="sub" style="line-height:1.9">Daily scan · ~5:15 PM (4:15 in winter) weekdays<br>Pre-market briefing · ~8:40 AM (7:40 in winter)<br>S&P 500 scanner · ~3 AM<br>Crypto board · every 2 hours<br>Bot + price alerts · every ~10 min<br>Custom-model retrain · 2nd of each month</div></div></div>`;
+  $('#saveSrc').onclick = () => { SRC = $('#src').value.trim().replace(/\/?$/, '/'); store.set('oracle_src', SRC); for (const k in cache) delete cache[k]; boot(); };
+  $('#resetSrc').onclick = () => { SRC = DEFAULT_SRC; store.set('oracle_src', SRC); for (const k in cache) delete cache[k]; boot(); };
+}
+
+async function route(){
+  const h = decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'today';
+  if (h.startsWith('t/')){ navRender(''); try { await viewTicker(h.slice(2).toUpperCase()); } catch(e){ $('#view').innerHTML = `<span class="back" onclick="history.back()">← BACK</span><div class="empty">Couldn't show this ticker: ${esc(e.message)}</div>`; } window.scrollTo(0,0); return; }
+  navRender(h);
+  const fn = {today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewToday;
+  try { await fn(); } catch(e){ $('#view').innerHTML = `<div class="empty">Couldn't render this view: ${esc(e.message)}</div>`; }
+}
+async function boot(){
+  LATEST = await get('latest.json');
+  if (LATEST){
+    $('#stamp').textContent = 'updated ' + ago(LATEST.generated) + ' · ' + (LATEST.model||'').split('/').pop();
+    const m = LATEST.mood || {}; $('#moodPill').textContent = (m.label||'—') + ' · ' + pct0(m.pct_up) + ' ▲';
+    const r = LATEST.report || {}; $('#hitPill').textContent = 'HIT RATE ' + (r.hit_rate!=null ? pct0(r.hit_rate) : '—') + (r.n ? ' / ' + r.n : '');
+  } else { $('#stamp').textContent = 'waiting for first scan'; }
+  route();
+}
+window.addEventListener('hashchange', route);
+$('#reload').onclick = () => { for (const k in cache) delete cache[k]; boot(); };
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+name: Backtest lab (run manually)
+on:
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: "Tickers separated by spaces (blank = watchlist)"
+        default: ""
+      battle:
+        description: "Also race mini vs small vs base (Model Battle)"
+        type: boolean
+        default: false
+permissions:
+  contents: write
+concurrency:
+  group: oracle-backtest
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      PORTFOLIO_HOLDINGS: ${{ secrets.PORTFOLIO_HOLDINGS }}
+      ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_LIVE_CONFIRM: ${{ secrets.ALPACA_LIVE_CONFIRM }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_USER: ${{ secrets.HF_USER }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/oracle-setup
+      - name: Run
+        run: python -m app.cli backtest ${{ inputs.tickers }} ${{ inputs.battle && '--battle' || '' }}
+      - name: Save results
+        if: always()
+        run: ./scripts/commit.sh "backtest"

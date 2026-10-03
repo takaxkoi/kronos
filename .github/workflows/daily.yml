@@ -1,0 +1,33 @@
+name: Daily scan (after the close)
+on:
+  schedule:
+    - cron: "15 21 * * 1-5"   # 5:15 PM EDT / 4:15 PM EST
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: oracle-daily
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      PORTFOLIO_HOLDINGS: ${{ secrets.PORTFOLIO_HOLDINGS }}
+      ALPACA_KEY_ID: ${{ secrets.ALPACA_KEY_ID }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_LIVE_CONFIRM: ${{ secrets.ALPACA_LIVE_CONFIRM }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_USER: ${{ secrets.HF_USER }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/oracle-setup
+        with:
+          full: "true"
+      - name: Run
+        run: python -m app.cli daily
+      - name: Save results
+        if: always()
+        run: ./scripts/commit.sh "daily scan"

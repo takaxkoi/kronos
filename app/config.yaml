@@ -1,0 +1,129 @@
+# ─────────────────────────────────────────────────────────────
+#  KRONOS ORACLE — settings
+#  Edit this file on GitHub (pencil icon) to change what gets scanned.
+# ─────────────────────────────────────────────────────────────
+
+model:
+  # Main model used for your watchlist, indices, sectors, crypto, forex
+  name: NeoQuasar/Kronos-small
+  tokenizer: NeoQuasar/Kronos-Tokenizer-base
+  max_context: 512
+  # Lighter model used for the big overnight S&P 500 scan
+  scanner_name: NeoQuasar/Kronos-mini
+  scanner_tokenizer: NeoQuasar/Kronos-Tokenizer-2k
+  scanner_max_context: 2048
+  # Models raced against each other in "Model Battle"
+  battle:
+    - {name: NeoQuasar/Kronos-mini,  tokenizer: NeoQuasar/Kronos-Tokenizer-2k,   max_context: 2048}
+    - {name: NeoQuasar/Kronos-small, tokenizer: NeoQuasar/Kronos-Tokenizer-base, max_context: 512}
+    - {name: NeoQuasar/Kronos-base,  tokenizer: NeoQuasar/Kronos-Tokenizer-base, max_context: 512}
+  # Fine-tuned per-ticker models are written to app/custom_models.yaml by the monthly retrain
+
+forecast:
+  lookback: 400          # candles of history fed to Kronos
+  horizon: 5             # trading days ahead (daily timeframe)
+  samples: 30            # simulated futures per stock (agreement meter = X / samples)
+  temperature: 1.0
+  top_p: 0.9
+  batch_size: 64         # sequences per model call (lower if memory runs out)
+  hourly_horizon: 7      # 1h bars (~1 trading day)
+  weekly_horizon: 4      # 1wk bars (~1 month) -> monthly range + weekly timeframe
+  crypto_hourly_horizon: 24
+
+# Your main list — full detail, trade plans, multi-timeframe, alerts
+watchlist: [AAPL, MSFT, NVDA, AMZN, GOOGL, META, TSLA, AMD, AVGO, NFLX, JPM, COIN, PLTR, SMCI, UBER]
+
+# Your real holdings live in the PORTFOLIO_HOLDINGS secret (e.g. "AAPL:10,MSFT:5"),
+# never in this public file.
+
+indices: [SPY, QQQ, DIA, IWM]
+vix: ^VIX
+
+sectors:
+  XLK: Technology
+  XLF: Financials
+  XLE: Energy
+  XLV: Health Care
+  XLY: Consumer Discretionary
+  XLP: Consumer Staples
+  XLI: Industrials
+  XLB: Materials
+  XLU: Utilities
+  XLRE: Real Estate
+  XLC: Communication
+
+leveraged: [TQQQ, SQQQ, SOXL, SOXS, UPRO, SPXU, TNA, TZA, LABU, FAS]
+
+crypto: [BTC-USD, ETH-USD, SOL-USD, XRP-USD, BNB-USD, DOGE-USD, ADA-USD, TRX-USD, AVAX-USD, LINK-USD,
+         DOT-USD, LTC-USD, BCH-USD, XLM-USD, HBAR-USD, SHIB-USD, UNI-USD, NEAR-USD, ATOM-USD, ETC-USD]
+
+forex:
+  EURUSD=X: EUR/USD
+  GBPUSD=X: GBP/USD
+  USDJPY=X: USD/JPY
+  AUDUSD=X: AUD/USD
+  USDCAD=X: USD/CAD
+  USDCHF=X: USD/CHF
+  NZDUSD=X: NZD/USD
+
+commodities:
+  GC=F: Gold
+  SI=F: Silver
+  CL=F: Crude Oil
+  NG=F: Natural Gas
+  HG=F: Copper
+
+scanner:
+  sp500: true            # overnight scan of the whole S&P 500 with the mini model
+  samples: 12
+
+filters:
+  min_price: 3.0                  # below this = penny stock, hidden from top lists
+  min_avg_dollar_volume: 5000000  # 20-day average $ volume
+
+signals:
+  alert_min_score: 75
+  alert_min_agreement: 0.75
+  min_rr: 2.0                     # trade plans need reward >= 2x risk
+  breakout_lookback: 20
+  volatility_warn_ratio: 1.6      # predicted swings vs normal swings
+  volume_surge_ratio: 1.5
+  earnings_pause: true            # pause signals when earnings land inside the forecast window
+
+risk:
+  account_size: 10000
+  risk_per_trade: 0.01            # 1% of account risked per trade
+
+paper:
+  starting_cash: 100000
+  max_positions: 10
+  position_pct: 0.10
+  allow_short: false
+
+autotrade:
+  enabled: false                  # flip to true to send orders to Alpaca
+  live: false                     # false = Alpaca PAPER account. Live also needs secret ALPACA_LIVE_CONFIRM=YES
+  min_hit_rate: 0.58              # report card must earn it before live trading is allowed
+  min_graded: 100
+  max_positions: 5
+  position_pct: 0.10
+
+backtest:
+  days: 250
+  step: 5
+  threshold: 0.65                 # agreement needed to take a trade
+  cost_bps: 5                     # commission + slippage per side
+  samples: 16
+
+hedge:
+  trigger_return: -0.02           # suggest a hedge if portfolio is predicted to drop 2%+
+  trigger_prob: 0.65
+  ratio: 0.5
+
+ensemble:
+  rsi_period: 14
+
+retrain:
+  tickers: [AAPL, NVDA, TSLA]     # custom models trained monthly (needs HF_TOKEN + HF_USER secrets)
+  epochs: 3
+  learning_rate: 0.000002
