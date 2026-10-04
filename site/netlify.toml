@@ -1,7 +1,7 @@
 # Build only the website folder. Without base = "site", Netlify sees requirements.txt at the repo
 # root and tries to install PyTorch for every deploy, which fails.
 [build]
-  base = "site"
+
   publish = "."
   command = "echo static site"
 
