@@ -339,6 +339,13 @@ def capture() -> dict:
     av = AVBudget(cc.get("av_daily_limit", 25))
     man["alpha_vantage"] = av_capture(av, core, folder, cfg)
 
+    # Finnhub (insiders, analyst trends, earnings surprises, news, metrics) + FRED (macro)
+    from .sources import finnhub_capture, fred_capture
+    fh_list = list(dict.fromkeys([t for t in core_stocks if t not in cfg["indices"]] + cc.get("finnhub_extra", [])))
+    for k, df in finnhub_capture(fh_list).items():
+        man["files"][k] = _save_csv(df, folder / f"{k}.csv.gz")
+    man["files"]["fred_macro"] = _save_csv(fred_capture(), folder / "fred_macro.csv.gz")
+
     man["seconds"] = round(time.time() - t0)
     man["finished"] = datetime.now(timezone.utc).isoformat()
     write_json(folder / "manifest.json", man)
