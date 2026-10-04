@@ -81,6 +81,9 @@ data:
   #   Free keys only return 100 days of prices (Kronos wants ~400), so prices stay on Yahoo.
   # PAID key: also add secret ALPHAVANTAGE_PREMIUM=true, then list tickers here (or "all")
   #   to pull split-adjusted prices from Alpha Vantage first, with Yahoo as the backup.
+  #   Calls are spaced to stay under the plan's per-minute cap: 66/min by default
+  #   (headroom under the $49.99 plan's 75). Change it with repo variable/secret AV_CALLS_PER_MIN.
+  #   Whole S&P 500 = ~500 calls = ~8 min at 66/min. Same ticker twice in one run = one call.
   alphavantage_first: []
 
 scanner:

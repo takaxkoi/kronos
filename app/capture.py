@@ -24,7 +24,7 @@ import pandas as pd
 import requests
 
 from .core import ROOT, STATE_DIR, SITE_DATA, load_config, log, read_json, write_json
-from .data import asset_class, fetch_history, sp500
+from .data import _av_limited, asset_class, av_gap, av_premium, fetch_history, sp500
 
 VAULT = Path(os.environ.get("KRONOS_VAULT_DIR", ROOT / "data"))
 
@@ -55,7 +55,8 @@ def _save_raw(obj, path: Path) -> None:
 
 
 class AVBudget:
-    """Alpha Vantage free tier: 25 calls/day, 1 call/sec. Counts calls per UTC day across runs."""
+    """Alpha Vantage call budget. Free key: 25 calls/day, ~1/sec, counted per UTC day across runs.
+    Paid key (ALPHAVANTAGE_PREMIUM=true): no daily cap, throttled under the per-minute cap."""
 
     def __init__(self, limit: int):
         self.key = os.environ.get("ALPHAVANTAGE_API_KEY")
@@ -64,39 +65,48 @@ class AVBudget:
         today = datetime.now(timezone.utc).date().isoformat()
         self.used = st.get("used", 0) if st.get("day") == today else 0
         self.day, self.limit, self.last, self.dead = today, limit, 0.0, False
+        self.premium = av_premium()
 
     def left(self) -> int:
-        return 0 if (not self.key or self.dead) else max(0, self.limit - self.used)
+        if not self.key or self.dead:
+            return 0
+        return 10**6 if self.premium else max(0, self.limit - self.used)
 
     def call(self, params: dict, want_json: bool = True):
         if self.left() <= 0:
             return None
-        wait = 1.3 - (time.time() - self.last)
-        if wait > 0:
-            time.sleep(wait)
-        try:
-            r = requests.get("https://www.alphavantage.co/query", params={**params, "apikey": self.key}, timeout=60)
-        except Exception as e:
-            log(f"AV {params.get('function')} failed: {e}")
-            return None
-        finally:
-            self.last = time.time()
-            self.used += 1
-            write_json(self.f, {"day": self.day, "used": self.used})
-        txt = r.text
-        if txt.lstrip().startswith("{"):
+        for attempt in range(2):
+            wait = av_gap() - (time.time() - self.last)
+            if wait > 0:
+                time.sleep(wait)
+            try:
+                r = requests.get("https://www.alphavantage.co/query", params={**params, "apikey": self.key}, timeout=60)
+            except Exception as e:
+                log(f"AV {params.get('function')} failed: {e}")
+                return None
+            finally:
+                self.last = time.time()
+                self.used += 1
+                write_json(self.f, {"day": self.day, "used": self.used})
+            txt = r.text
+            if not txt.lstrip().startswith("{"):
+                return None if want_json else txt
             try:
                 j = r.json()
             except ValueError:
                 return None
             msg = j.get("Information") or j.get("Note") or j.get("Error Message")
-            if msg:
-                if "rate limit" in msg.lower() or "requests per day" in msg.lower():
-                    self.dead = True
-                log(f"AV {params.get('function')}: {msg[:120]}")
-                return None
-            return j if want_json else None
-        return None if want_json else txt
+            if not msg:
+                return j if want_json else None
+            if _av_limited(msg):
+                if self.premium and attempt == 0:
+                    log("AV per-minute cap hit — pausing 60s")
+                    time.sleep(60)
+                    continue
+                self.dead = True
+            log(f"AV {params.get('function')}: {msg[:120]}")
+            return None
+        return None
 
 
 # ── Yahoo snapshots ──────────────────────────────────────────

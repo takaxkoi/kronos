@@ -136,7 +136,7 @@ def fetch_history(tickers: list[str], interval: str = "1d", cfg: dict | None = N
     out: dict[str, pd.DataFrame] = {}
     # Alpha Vantage first for your core list when you choose it (paid keys can cover everything)
     av = (cfg or {}).get("data", {}).get("alphavantage_first", [])
-    if os.environ.get("ALPHAVANTAGE_API_KEY") and os.environ.get("ALPHAVANTAGE_PREMIUM", "").lower() in ("1", "true", "yes") and av:
+    if os.environ.get("ALPHAVANTAGE_API_KEY") and av_premium() and av:
         for t in tickers:
             if interval == "1d" and (av == "all" or t in av) and asset_class(t, cfg) == "stock":
                 df = _drop_partial(fetch_alphavantage(t, interval), interval, "stock")
@@ -169,7 +169,7 @@ def fetch_history(tickers: list[str], interval: str = "1d", cfg: dict | None = N
                 df = pd.DataFrame()
             if df.empty and cls == "stock":
                 df = _drop_partial(fetch_alpaca(t, interval), interval, cls)
-            if df.empty and cls == "stock" and os.environ.get("ALPHAVANTAGE_PREMIUM", "").lower() in ("1", "true", "yes"):
+            if df.empty and cls == "stock" and av_premium():
                 df = _drop_partial(fetch_alphavantage(t, interval), interval, cls)
             if not df.empty:
                 out[t] = df
@@ -179,37 +179,71 @@ def fetch_history(tickers: list[str], interval: str = "1d", cfg: dict | None = N
     return out
 
 
-_AV = {"exhausted": False, "last": 0.0, "earnings": None}
+_AV = {"exhausted": False, "last": 0.0, "earnings": None, "cache": {}}
+
+
+def av_premium() -> bool:
+    return os.environ.get("ALPHAVANTAGE_PREMIUM", "").lower() in ("1", "true", "yes")
+
+
+def av_gap() -> float:
+    """Seconds between Alpha Vantage calls.
+    Free key: ~1 call/sec (and 25/day). Paid key: stay under the plan's per-minute cap
+    (AV_CALLS_PER_MIN, default 66 = headroom under the $49.99 plan's 75/min)."""
+    if not av_premium():
+        return 1.3
+    try:
+        per_min = max(1, int(os.environ.get("AV_CALLS_PER_MIN", "66")))
+    except ValueError:
+        per_min = 66
+    return 60.0 / per_min
+
+
+def _av_limited(text: str) -> bool:
+    t = text.lower()
+    return "rate limit" in t or "requests per day" in t or "per minute" in t or "spreading out" in t
 
 
 def _av_get(params: dict) -> str | None:
-    """One Alpha Vantage call (free key: 25/day, 1/sec). Returns CSV text or None."""
+    """One throttled Alpha Vantage call. Returns CSV text or None."""
     key = os.environ.get("ALPHAVANTAGE_API_KEY")
     if not key or _AV["exhausted"]:
         return None
-    wait = 1.3 - (time.time() - _AV["last"])
-    if wait > 0:
-        time.sleep(wait)
-    try:
-        r = requests.get("https://www.alphavantage.co/query", params={**params, "apikey": key}, timeout=40)
-        _AV["last"] = time.time()
-        text = r.text
-    except Exception as e:
-        log(f"alpha vantage failed: {e}")
+    for attempt in range(2):
+        wait = av_gap() - (time.time() - _AV["last"])
+        if wait > 0:
+            time.sleep(wait)
+        try:
+            r = requests.get("https://www.alphavantage.co/query", params={**params, "apikey": key}, timeout=40)
+            text = r.text
+        except Exception as e:
+            log(f"alpha vantage failed: {e}")
+            return None
+        finally:
+            _AV["last"] = time.time()
+        if not text.lstrip().startswith("{"):
+            return text
+        # JSON here means an error, a premium-only notice, or a rate-limit notice
+        if not _av_limited(text):
+            return None
+        if av_premium() and attempt == 0:
+            log("alpha vantage per-minute cap hit — pausing 60s")
+            time.sleep(60)
+            continue
+        _AV["exhausted"] = True
+        log("alpha vantage limit reached — falling back to Yahoo/Alpaca")
         return None
-    if text.lstrip().startswith("{"):  # JSON here means an error or a rate-limit notice
-        if "rate limit" in text.lower() or "requests per day" in text.lower():
-            _AV["exhausted"] = True
-            log("alpha vantage daily limit reached — falling back")
-        return None
-    return text
+    return None
 
 
 def fetch_alphavantage(ticker: str, interval: str, cls: str = "stock") -> pd.DataFrame:
     """US stocks / ETFs from Alpha Vantage (secret ALPHAVANTAGE_API_KEY)."""
     if cls != "stock" or interval not in ("1d", "1wk", "1h"):
         return pd.DataFrame()
-    premium = os.environ.get("ALPHAVANTAGE_PREMIUM", "").lower() in ("1", "true", "yes")
+    hit = _AV["cache"].get((ticker.upper(), interval))
+    if hit is not None:  # same ticker twice in one run costs one call
+        return hit.copy()
+    premium = av_premium()
     # free keys only get the raw (not split-adjusted) daily series; paid keys get adjusted prices
     fn = {"1d": "TIME_SERIES_DAILY_ADJUSTED" if premium else "TIME_SERIES_DAILY",
           "1wk": "TIME_SERIES_WEEKLY_ADJUSTED", "1h": "TIME_SERIES_INTRADAY"}[interval]
@@ -234,7 +268,9 @@ def fetch_alphavantage(ticker: str, interval: str, cls: str = "stock") -> pd.Dat
         df = df[(df.index.time >= pd.Timestamp("09:30").time()) & (df.index.time <= pd.Timestamp("15:30").time())]
     if interval == "1wk":  # AV stamps the week's Friday; use Monday like Yahoo
         df.index = df.index.normalize() - pd.to_timedelta(df.index.weekday, unit="D")
-    return _standardize(df[["open", "high", "low", "close", "volume"]].sort_index(), "stock")
+    out = _standardize(df[["open", "high", "low", "close", "volume"]].sort_index(), "stock")
+    _AV["cache"][(ticker.upper(), interval)] = out
+    return out.copy()
 
 
 def av_earnings() -> dict[str, str]:
