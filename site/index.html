@@ -152,13 +152,13 @@ footer .row{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
       <div>
         <span class="badge">INVITATION ONLY</span>
         <h2>Welcome back to <em>the desk.</em></h2>
-        <p class="sub">Access is limited to approved members. Sign in with the email and password on your account.</p>
+        <p class="sub">Access is limited to approved members. Sign in with your username (or email) and password.</p>
       </div>
       <form class="card" id="form" autocomplete="on">
         <h3 id="formTitle">Sign in</h3>
         <div id="pwBlock">
-          <label for="email">Email</label>
-          <input id="email" type="email" autocomplete="email" required>
+          <label for="email">Username or email</label>
+          <input id="email" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
           <label for="password">Password</label>
           <input id="password" type="password" autocomplete="current-password" required>
         </div>
@@ -189,7 +189,8 @@ sb.auth.getSession().then(({ data: { session } }) => {
 $('#form').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (mode === 'open'){ location.href = 'app.html'; return; }
-  const email = $('#email').value.trim().toLowerCase();
+  let email = $('#email').value.trim().toLowerCase();
+  if (email && !email.includes('@')) email = email + '@kronos-oracle.netlify.app';  // usernames map to app-only logins
   if (mode === 'reset'){
     if (!email) return msg('Enter your email first.', 'err');
     $('#submit').disabled = true;
