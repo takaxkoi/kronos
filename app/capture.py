@@ -298,7 +298,7 @@ def capture() -> dict:
     core = list(dict.fromkeys([t.upper() for t in cfg["watchlist"]] + list(cfg["holdings"]) + cfg["indices"]))
     spx = [r["ticker"] for r in sp500()]
     extra = list(cfg["sectors"]) + cfg["leveraged"] + list(cfg["forex"]) + list(cfg["commodities"]) + cfg["crypto"] + \
-        [cfg["vix"], "^TNX", "^IRX", "^FVX", "DX-Y.NYB"]
+        [cfg["vix"], "^TNX", "^IRX", "^FVX", "DX-Y.NYB", "HYG", "LQD", "TLT", "TIP", "GLD", "USO"]
     universe = list(dict.fromkeys(core + spx + extra))
 
     hist = fetch_history(universe, "1d", cfg, period="1mo")
@@ -344,7 +344,10 @@ def capture() -> dict:
     fh_list = list(dict.fromkeys([t for t in core_stocks if t not in cfg["indices"]] + cc.get("finnhub_extra", [])))
     for k, df in finnhub_capture(fh_list).items():
         man["files"][k] = _save_csv(df, folder / f"{k}.csv.gz")
-    man["files"]["fred_macro"] = _save_csv(fred_capture(), folder / "fred_macro.csv.gz")
+    fred = fred_capture()
+    if fred.empty:  # no working FRED key: build the same macro picture from free market prices
+        fred = market_macro(hist)
+    man["files"]["macro"] = _save_csv(fred, folder / "macro.csv.gz")
 
     man["seconds"] = round(time.time() - t0)
     man["finished"] = datetime.now(timezone.utc).isoformat()
@@ -355,6 +358,30 @@ def capture() -> dict:
                                           "latest": man, "size_mb": round(sum(f.stat().st_size for f in VAULT.rglob("*") if f.is_file()) / 1e6, 1)})
     log(f"capture done in {man['seconds']}s: {man['files']} | AV: {man['alpha_vantage']}")
     return man
+
+
+MACRO_PROXIES = {"^TNX": "10y Treasury yield", "^FVX": "5y Treasury yield", "^IRX": "3m T-bill yield",
+                 "^VIX": "VIX", "DX-Y.NYB": "Dollar index", "HYG": "High-yield bonds", "LQD": "Investment-grade bonds",
+                 "TLT": "20y+ Treasuries", "TIP": "Inflation-protected bonds", "GLD": "Gold", "USO": "Oil"}
+
+
+def market_macro(hist: dict) -> pd.DataFrame:
+    """Macro gauges from market prices (no API key): yields, curve, credit stress, dollar, VIX, inflation hedge."""
+    rows = []
+    for t, name in MACRO_PROXIES.items():
+        df = hist.get(t)
+        if df is None or df.empty:
+            continue
+        for ts, r in df.tail(5).iterrows():
+            rows.append({"series": t, "name": name, "date": ts.date().isoformat(), "value": float(r["close"])})
+    if "^TNX" in hist and "^IRX" in hist:  # 10y minus 3m: classic recession-warning curve
+        a, b = hist["^TNX"]["close"], hist["^IRX"]["close"]
+        c = (a - b).dropna().tail(5)
+        rows += [{"series": "CURVE_10Y_3M", "name": "Yield curve 10y-3m", "date": ts.date().isoformat(), "value": float(v)} for ts, v in c.items()]
+    if "HYG" in hist and "LQD" in hist:  # junk vs investment-grade: falling ratio = credit stress
+        r = (hist["HYG"]["close"] / hist["LQD"]["close"]).dropna().tail(5)
+        rows += [{"series": "HYG_LQD", "name": "Credit appetite (HYG/LQD)", "date": ts.date().isoformat(), "value": float(v)} for ts, v in r.items()]
+    return pd.DataFrame(rows)
 
 
 def load_days(name: str, start: str | None = None) -> pd.DataFrame:
