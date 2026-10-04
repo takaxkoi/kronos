@@ -3,6 +3,7 @@
 set -u
 git config user.name "kronos-oracle[bot]"
 git config user.email "oracle-bot@users.noreply.github.com"
+python -m app.cli publish || echo "publish to Supabase failed (dashboard keeps the previous data)"
 for p in state site/data data app/config.yaml app/custom_models.yaml; do
   [ -e "$p" ] && git add -A -- "$p"
 done

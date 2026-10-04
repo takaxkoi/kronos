@@ -51,6 +51,9 @@ def main(argv: list[str]) -> None:
     elif cmd == "capture":
         from .capture import capture
         capture()
+    elif cmd == "publish":
+        from .publish import publish
+        publish()
     elif cmd == "grade":
         from . import ledger
         from .core import SITE_DATA, load_config, write_json

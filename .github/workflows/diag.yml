@@ -10,6 +10,8 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 240
+    env:
+      ORACLE_SYNC_TOKEN: ${{ secrets.ORACLE_SYNC_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/oracle-setup

@@ -56,6 +56,13 @@ Dashboard (site/index.html on Netlify) reads them straight from this repo
 
 Read any table across all days with `from app.capture import load_days; load_days("fundamentals")`.
 
+## Website + login (Netlify + Supabase)
+
+- **Landing page** (`site/index.html`) with sign-in. **Dashboard** (`site/app.html`) only opens for signed-in, allow-listed members.
+- **Data:** forecast files sit in your Supabase table `oracle_docs`, which only emails in `oracle_members` can read. Every GitHub job pushes changed files there through the `oracle_ingest` function, which needs the `ORACLE_SYNC_TOKEN` secret.
+- **Add a member:** in the Supabase SQL editor, run `insert into oracle_members(email) values ('friend@example.com');`. They also need a login in your Supabase project.
+- **Hosting:** Netlify site `kronos-oracle`, linked to this repo, with `site` as the publish folder.
+
 ## Change settings
 
 Everything is in `app/config.yaml`, including the watchlist, models, samples, horizon, filters, risk, paper trading and autotrade. You can also manage the watchlist from Telegram with `/watch add TSLA`.

@@ -1,3 +1,17 @@
 [build]
   publish = "site"
   command = ""
+
+# dashboard data now lives in Supabase behind the login; don't serve the raw files from Netlify
+[[redirects]]
+  from = "/data/*"
+  to = "/"
+  status = 302
+  force = true
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Content-Type-Options = "nosniff"

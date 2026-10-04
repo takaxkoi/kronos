@@ -144,3 +144,9 @@ capture:
   backfill: true             # one-time 10-year daily price history for every ticker -> data/history/
   av_daily_limit: 25         # Alpha Vantage free key allowance
   av_reserve: 3              # calls left unused for the daily scan's earnings lookup
+
+supabase:
+  # Private dashboard behind login. Public values (safe to commit): project URL + publishable key.
+  # Writes need the GitHub secret ORACLE_SYNC_TOKEN; reads need a signed-in, allow-listed email.
+  url: https://stzeugbijanjwroibtmx.supabase.co
+  anon_key: sb_publishable_IsJeraZpjoUXbeO8Lr-F_g_14h7UoUm
