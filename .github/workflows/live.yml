@@ -1,7 +1,7 @@
 name: Bot + price alerts
 on:
   schedule:
-    - cron: "*/10 * * * *"    # every ~10 min (GitHub may delay a few minutes)
+    - cron: "*/30 13-21 * * 1-5"   # every 30 min, weekdays around market hours only
   workflow_dispatch:
 permissions:
   contents: write

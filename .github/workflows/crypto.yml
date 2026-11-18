@@ -1,7 +1,7 @@
-name: Crypto hourly board
+name: Digital assets forecast board
 on:
   schedule:
-    - cron: "17 */2 * * *"    # every 2 hours, 24/7
+    - cron: "17 1,13 * * *"    # twice a day
   workflow_dispatch:
 permissions:
   contents: write
