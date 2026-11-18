@@ -65,6 +65,15 @@ Read any table across all days with `from app.capture import load_days; load_day
 - **Add a member:** in the Supabase SQL editor, run `insert into oracle_members(email) values ('friend@example.com');`. They also need a login in your Supabase project.
 - **Hosting:** Netlify site `kronos-oracle`, linked to this repo, with `site` as the publish folder.
 
+## AI research ratings (TradingAgents)
+
+The `AI research ratings` job runs your TradingAgents fork on a few watchlist stocks each weeknight. Four AI analysts (chart, fundamentals, news, sentiment) write reports, a bull and a bear debate them, and a portfolio manager issues **Buy / Overweight / Hold / Underweight / Sell** with a thesis, price target and time horizon. Results show on the dashboard's **AI Research** tab.
+
+- **Key:** one AI key as a GitHub secret. `GOOGLE_API_KEY` (Gemini, free tier at aistudio.google.com/apikey) is checked first, then `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`.
+- **Pace:** 3 stocks a night, rotating through the watchlist. Change `research.per_run` in `app/config.yaml`.
+- **On demand:** Actions → AI research ratings → Run workflow, and type tickers.
+- **Grading:** each rating is logged in `state/research_log.csv` with the price at the time and graded after 5 trading days against SPY. Treat ratings as unproven until the scorecard says otherwise.
+
 ## Change settings
 
 Everything is in `app/config.yaml`, including the watchlist, models, samples, horizon, filters, risk, paper trading and autotrade. You can also manage the watchlist from Telegram with `/watch add TSLA`.
