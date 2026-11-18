@@ -167,7 +167,7 @@ const FLAG = {breakout:['🚀 breakout','g'],breakdown:['🕳 breakdown','r'],re
 const chips = f => (f||[]).map(x => `<span class="chip ${FLAG[x]?.[1]||''}">${FLAG[x]?.[0]||esc(x)}</span>`).join('');
 const meter = a => { const n = a.samples||0, up = Math.round((a.p_up||0)*n); let h=''; for(let i=0;i<n;i++) h += `<i class="${i<up?'u':'d'}"></i>`; return `<div class="meter" title="${up} of ${n} simulated futures go up">${h}</div>`; };
 
-const TABS = [['today','Today'],['watch','Watchlist'],['market','Market'],['scanner','S&P 500'],['other','Crypto · FX · Gold'],['report','Report Card'],['backtest','Backtest Lab'],['paper','Paper Trading'],['journal','Journal'],['setup','Setup']];
+const TABS = [['today','Today'],['watch','Watchlist'],['research','AI Research'],['market','Market'],['scanner','S&P 500'],['other','Crypto · FX · Gold'],['report','Report Card'],['backtest','Backtest Lab'],['paper','Paper Trading'],['journal','Journal'],['setup','Setup']];
 let LATEST = null, REPORT = null;
 
 function navRender(active){
@@ -511,6 +511,34 @@ async function viewJournal(){
     ${J.length?`<div class="card"><div class="tbl"><table><thead><tr><th>When</th><th>Trade</th><th class="n">Qty</th><th class="n">Price</th><th>Kronos said</th><th>You</th><th>Note</th></tr></thead><tbody>${J.slice().reverse().map(r=>`<tr><td class="mono">${dateS(r.time)}</td><td><b>${esc(r.side)} ${esc(r.ticker)}</b></td><td class="n">${esc(r.qty)}</td><td class="n">${px(+r.price)}</td><td>${r.kronos_dir?arrow(r.kronos_dir)+' '+esc(r.kronos_agree)+' · '+esc(r.kronos_score):'<span class="muted">no call</span>'}</td><td>${String(r.followed)==='True'||r.followed===true?'<span class="up">with the call</span>':'<span class="dn">against the call</span>'}</td><td class="sub">${esc(r.note)}</td></tr>`).join('')}</tbody></table></div></div>`:'<div class="empty">No trades logged yet.</div>'}`;
 }
 
+const RATE = {Buy:['up','▲▲ BUY'],Overweight:['up','▲ OVERWEIGHT'],Hold:['gold-t','● HOLD'],Underweight:['dn','▼ UNDERWEIGHT'],Sell:['dn','▼▼ SELL'],REVIEW:['muted','? REVIEW']};
+const rateTag = r => `<b class="${(RATE[r]||RATE.REVIEW)[0]} mono">${(RATE[r]||['','? '+esc(r)])[1]}</b>`;
+const mdLite = t => esc(t||'').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^#{1,4}\s*(.+)$/gm,'<b>$1</b>').replace(/\n/g,'<br>');
+async function viewResearch(){
+  const R = await get('research.json');
+  if (!R || !Object.keys(R.ratings||{}).length){
+    $('#view').innerHTML = `<div class="card"><h3>AI research ratings</h3><p class="sub" style="font-size:14px">A team of AI analysts (chart, fundamentals, news, sentiment) researches each stock, a bull and a bear debate it, and a portfolio manager issues a rating with a written thesis.</p><div class="warnbox">${esc(R?.status || 'No ratings yet. Add a free GOOGLE_API_KEY secret in GitHub, then run Actions → “AI research ratings”.')}</div></div>`; return; }
+  const rows = Object.values(R.ratings).sort((a,b)=>b.date.localeCompare(a.date)||a.ticker.localeCompare(b.ticker));
+  const S = R.scorecard || {};
+  let h = `<div class="grid g3"><div class="card"><h3>Ratings on file</h3><div class="hero">${rows.length}</div><div class="sub">${esc(R.model||'')} · updated ${ago(R.generated)}</div></div>
+    <div class="card"><h3>Graded so far</h3><div class="hero gold">${S.hit_rate!=null?pct0(S.hit_rate):'—'}</div><div class="sub">${S.n_calls?`of ${S.n_calls} Buy/Sell-side calls beat or trailed SPY as rated`:`${S.pending||0} ratings waiting ${R.holding_days} trading days to be graded`}</div></div>
+    <div class="card"><h3>Status</h3><div class="hero" style="font-size:24px">${esc(R.status==='ok'?'RUNNING OK':(R.status||'—'))}</div><div class="sub">${(R.last_errors||[]).map(e=>esc(e.ticker+': '+e.error.slice(0,90))).join('<br>')||'Ratings are unproven until graded. Not financial advice.'}</div></div></div>
+    <div class="sec-title">Latest ratings <small>tap a stock for the full research</small></div>
+    <div class="card"><div class="tbl"><table><thead><tr><th>Ticker</th><th>Rating</th><th class="n">Price then</th><th class="n">Target</th><th class="n">Upside</th><th>Horizon</th><th>Rated</th></tr></thead><tbody>${rows.map(r=>`<tr class="click" data-r="${esc(r.ticker)}"><td><b>${esc(r.ticker)}</b></td><td>${rateTag(r.rating)}</td><td class="n">${px(r.price)}</td><td class="n">${px(r.target)}</td><td class="n ${cls(r.upside)}">${pct(r.upside)}</td><td class="sub">${esc((r.horizon||'').slice(0,28))}</td><td class="mono sub">${dateS(r.date)}</td></tr>`).join('')}</tbody></table></div></div><div id="rsDetail"></div>`;
+  if ((S.by_rating||[]).length) h += `<div class="sec-title">Scorecard by rating <small>${R.holding_days}-day result vs SPY</small></div><div class="card"><div class="tbl"><table><thead><tr><th>Rating</th><th class="n">Graded</th><th class="n">Avg return</th><th class="n">Avg vs SPY</th></tr></thead><tbody>${S.by_rating.map(b=>`<tr><td>${rateTag(b.rating)}</td><td class="n">${b.n}</td><td class="n ${cls(b.avg_return)}">${pct(b.avg_return,2)}</td><td class="n ${cls(b.avg_alpha)}">${pct(b.avg_alpha,2)}</td></tr>`).join('')}</tbody></table></div></div>`;
+  $('#view').innerHTML = h;
+  document.querySelectorAll('[data-r]').forEach(el => el.onclick = async () => {
+    const d = await get('research/' + safe(el.dataset.r) + '.json'); if (!d) return;
+    const sec = (t, body) => body ? `<details style="border-top:1px solid var(--line);padding:10px 0"><summary style="cursor:pointer;font-weight:600">${t}</summary><div class="sub" style="font-size:13.5px;line-height:1.6;margin-top:8px;color:var(--ink2)">${mdLite(body)}</div></details>` : '';
+    $('#rsDetail').innerHTML = `<div class="card" style="margin-top:14px"><div class="row" style="flex-wrap:wrap"><div class="tk" style="font-size:26px">${esc(d.ticker)}</div><div>${rateTag(d.rating)}</div></div>
+      <div class="kv"><div><span>Price at rating</span><b>${px(d.price)}</b></div><div><span>Target</span><b>${px(d.target)}</b></div><div><span>Horizon</span><b style="white-space:normal">${esc(d.horizon||'—')}</b></div></div>
+      <h3 style="margin-top:16px">Action plan</h3><div style="font-size:14px;line-height:1.6">${mdLite(d.summary)}</div>
+      <h3 style="margin-top:16px">Why (thesis)</h3><div style="font-size:14px;line-height:1.6;color:var(--ink2)">${mdLite(d.thesis)}</div>
+      <div style="margin-top:14px">${Object.entries(d.reports||{}).map(([k,v])=>sec(k+' analyst', v)).join('')}${sec('Bull case', d.bull_case)}${sec('Bear case', d.bear_case)}${sec('Trader plan', d.trader_plan)}${sec('Risk debate', d.risk_debate)}</div>
+      <div class="sub" style="margin-top:10px">${esc(d.model)} · ${d.usage?.ai_calls||0} AI calls · ${d.seconds}s · ${dateS(d.date)}</div></div>`;
+    $('#rsDetail').scrollIntoView({behavior:'smooth'});
+  });
+}
 function setupNeeded(){ location.hash = 'setup'; }
 async function viewSetup(){
   $('#view').innerHTML = `<div class="grid g2"><div class="card"><h3>Go-live checklist</h3><ol class="steps">
@@ -535,7 +563,7 @@ async function route(){
   const h = decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'today';
   if (h.startsWith('t/')){ navRender(''); try { await viewTicker(h.slice(2).toUpperCase()); } catch(e){ $('#view').innerHTML = `<span class="back" onclick="history.back()">← BACK</span><div class="empty">Couldn't show this ticker: ${esc(e.message)}</div>`; } window.scrollTo(0,0); return; }
   navRender(h);
-  const fn = {today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewToday;
+  const fn = {today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewToday;
   try { await fn(); } catch(e){ $('#view').innerHTML = `<div class="empty">Couldn't render this view: ${esc(e.message)}</div>`; }
 }
 let GATED = false;

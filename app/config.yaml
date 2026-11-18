@@ -153,3 +153,14 @@ supabase:
   # Writes need the GitHub secret ORACLE_SYNC_TOKEN; reads need a signed-in, allow-listed email.
   url: https://stzeugbijanjwroibtmx.supabase.co
   anon_key: sb_publishable_IsJeraZpjoUXbeO8Lr-F_g_14h7UoUm
+
+research:
+  # AI research ratings (TradingAgents). Needs one AI key secret; GOOGLE_API_KEY (Gemini) has a free tier.
+  per_run: 3              # stocks researched per nightly run, rotating through the watchlist
+  holding_days: 5         # trading days until a rating is graded against SPY
+  debate_rounds: 1        # bull vs bear rounds (more = deeper, more AI calls)
+  risk_rounds: 1
+  pause_seconds: 20       # wait between stocks to stay under per-minute limits
+  # provider: google      # force one provider; default = first key found
+  # quick_model: gemini-3.5-flash-lite
+  # deep_model: gemini-3.8-flash

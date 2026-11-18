@@ -1,0 +1,40 @@
+name: AI research ratings
+on:
+  schedule:
+    - cron: "30 23 * * 1-5"   # 6:30 PM EST / 7:30 PM EDT, weekdays
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: "Tickers separated by spaces (blank = next few on the watchlist)"
+        default: ""
+permissions:
+  contents: write
+concurrency:
+  group: oracle-research
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
+      ORACLE_SYNC_TOKEN: ${{ secrets.ORACLE_SYNC_TOKEN }}
+      TICKERS: ${{ inputs.tickers }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install TradingAgents (your fork)
+        run: pip install -q "git+https://github.com/takaxkoi/TradingAgents" pyyaml numpy requests
+      - name: Research
+        run: python -m app.research $TICKERS
+      - name: Save results
+        if: always()
+        run: ./scripts/commit.sh "AI research"
