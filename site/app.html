@@ -147,6 +147,39 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:var(--
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
 .ohlc{font-size:13px;color:var(--ink2);min-height:20px;margin-bottom:4px}
 .ohlc b{color:var(--ink)}
+/* today */
+.lede{padding:6px 4px 4px}
+.lede h1{margin:0;font-size:36px;line-height:1.06;letter-spacing:-.03em;font-weight:700}
+.lede p{margin:12px 0 0;font-size:17px;line-height:1.45;color:var(--ink2)}
+.cmp{display:grid;grid-template-columns:1.5fr .8fr .9fr;gap:8px;align-items:center;padding:14px 0;border-top:1px solid var(--line);cursor:pointer}
+.cmp.head{border-top:0;padding:0 0 8px;font-size:12.5px;color:var(--muted);cursor:default}
+.cmp>span{text-align:right;font-size:17px;font-weight:700}
+.cmp>span:first-child{text-align:left;min-width:0}
+.cmp b{display:block;font-size:19px}
+.cmp small{display:block;font-size:12.5px;font-weight:500;color:var(--muted);line-height:1.35;margin-top:2px}
+.cmp .big,.idea .big{font-size:24px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.spot{background:var(--gold);color:#141414;border-radius:28px;padding:22px;cursor:pointer}
+.spot.old{background:var(--panel);color:var(--ink)}
+.spot .sub2{font-size:14px;font-weight:500}
+.spot .tick{font-size:84px;font-weight:700;letter-spacing:-.05em;line-height:.95;margin-top:14px}
+.spot .nm2{font-size:18px;font-weight:500;margin-top:4px}
+.spot .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 12px}
+.spot .two span{display:block;font-size:14px;font-weight:500}
+.spot .two b{font-size:38px;letter-spacing:-.03em;line-height:1.1}
+.spot p{margin:0;font-size:16px;line-height:1.45;font-weight:500}
+.idea{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);min-height:56px}
+.idea:first-of-type{border-top:0}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vs>div{border-radius:24px;padding:18px;color:#141414;display:flex;flex-direction:column;gap:14px}
+.vs .bull{background:var(--up)}.vs .bear{background:var(--dn)}
+.vs h4{margin:0;font-size:20px;font-weight:700}
+.vs b{display:block;font-size:30px;letter-spacing:-.03em;line-height:1}
+.vs span{font-size:14px;font-weight:500;line-height:1.3;display:block;margin-top:2px}
+.wl{display:grid;grid-template-columns:1fr auto 98px;gap:12px;align-items:center;min-height:56px;border-top:1px solid var(--line);cursor:pointer}
+.wl:first-child{border-top:0}
+.wl b{font-size:19px}.wl span{font-size:16px;color:var(--ink2)}
+.wl i{font-style:normal;height:38px;border-radius:19px;display:flex;align-items:center;justify-content:center;font-size:15.5px;font-weight:700;color:#141414}
+.wl i.u{background:var(--up)}.wl i.d{background:var(--dn)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -261,8 +294,7 @@ function setupCard(a){
   return `<div class="card setup" data-t="${esc(a.ticker)}">
     <div class="row"><div style="min-width:0"><div class="tk">${esc(a.ticker)} ${arrow(a.direction)}</div><div class="nm">${esc(a.name||a.sector||'')}</div></div>
     <div style="text-align:right"><div class="score">${a.score}<small>/100</small></div><div class="mono ${cls(a.median_return)}" style="font-size:13px">${pct(a.median_return)}</div></div></div>
-    ${meter(a)}
-    <div class="sub mono">${Math.round(a.agreement*a.samples)}/${a.samples} futures agree · ${pl.side==='short'?'SHORT':'LONG'} · R:R ${pl.rr!=null?pl.rr.toFixed(1):'—'}</div>
+    <div class="sub" style="margin-top:8px">${planSentence(a)} ${conf(a).k} of ${conf(a).n} simulated futures agree.</div>
     <div class="kv"><div><span>Entry</span><b>${px(pl.entry_low)}–${px(pl.entry_high)}</b></div><div><span>Stop</span><b class="dn">${px(pl.stop)}</b></div><div><span>Target</span><b class="up">${px(pl.target)}</b></div></div>
     <div class="chips" style="margin-top:10px">${chips(a.flags)}</div></div>`;
 }
@@ -284,37 +316,79 @@ const STD_COLS = [
 ];
 
 /* ───────── TODAY ───────── */
+const conf = a => { const n = a.samples || 0, k = a.agree_count != null ? a.agree_count : Math.round((a.agreement||0)*n), r = n ? k/n : 0;
+  return {k, n, word: r >= 0.9 ? 'very confident' : r >= 0.75 ? 'confident' : r >= 0.6 ? 'leaning that way' : 'close to a coin flip'}; };
+const signed = (v, d) => { if (v == null) return '—'; const t = Math.abs(v*100).toFixed(d == null ? 1 : d); return (+t === 0 ? '' : v >= 0 ? '+' : '−') + t + '%'; };
+const daysOld = s => s ? (Date.now() - new Date(s).getTime()) / 864e5 : 99;
+const niceDate = s => s ? new Date(s).toLocaleDateString(undefined, {month:'short', day:'numeric'}) : '';
+function planSentence(a){
+  const p = a.plan || {}; if (!p.entry_low) return '';
+  const act = p.side === 'short' ? ['Short between', 'Cover if it rises to', 'Take profit at'] : ['Buy between', 'Sell if it falls to', 'Take profit at'];
+  return `${act[0]} ${px(p.entry_low)} and ${px(p.entry_high)}. ${act[1]} ${px(p.stop)}. ${act[2]} ${px(p.target)}.${p.rr != null ? ` That risks $1 to make $${p.rr.toFixed(2)}.` : ''}`;
+}
+function ideaRow(a){
+  const c = conf(a);
+  return `<div class="idea setup" data-t="${esc(a.ticker)}"><div style="min-width:0"><div class="tk">${esc(a.ticker)} <span class="muted" style="font-size:13px;font-weight:500">${esc(a.name||a.sector||'')}</span></div><div class="sub">${c.k} of ${c.n} simulated futures agree, score ${a.score}</div></div><div class="big ${cls(a.median_return)}">${signed(a.median_return)}</div></div>`;
+}
 async function viewToday(){
   const L = LATEST;
   if (!L) return setupNeeded();
-  const m = L.mood || {}, v = L.vix || {};
-  let h = `<div class="grid g4 keep2">
-    <div class="card"><h3>Market mood</h3><div class="hero ${m.label==='RISK-ON'?'up':m.label==='RISK-OFF'?'dn':'gold'}" style="font-size:30px">${esc(m.label||'—')}</div>
-      <div class="gauge"><b style="width:${(m.pct_up||0)*100}%"></b></div><div class="sub">${pct0(m.pct_up)} of ${m.n||0} stocks predicted ▲ · avg ${pct(m.avg_return)}</div></div>
-    <div class="card"><h3>VIX · fear gauge</h3><div class="hero" style="font-size:30px">${px(v.level)}</div><div class="sub">next week ${v.direction?arrow(v.direction):''} <span class="mono ${cls(v.median_return)}">${pct(v.median_return)}</span> · ${v.direction==='up'?'fear rising':'fear easing'}</div></div>
-    <div class="card"><h3>Report card</h3><div class="hero gold" style="font-size:30px">${L.report?.hit_rate!=null?pct0(L.report.hit_rate):'—'}</div><div class="sub">${L.report?.n?`right on ${L.report.n} graded calls`:`${L.report?.pending||0} calls waiting to be graded`}</div></div>
-    <div class="card"><h3>Paper account</h3><div class="hero" style="font-size:30px">${L.paper?money(L.paper.equity):'—'}</div><div class="sub">${L.paper?`${pct(L.paper.return)} vs SPY ${pct(L.paper.spy_return)}`:'starts after first scan'}</div></div>
-  </div>`;
-  h += `<div class="sec-title">Indices <small>next ${L.horizon} trading days</small></div><div class="grid g4 keep2">${(L.indices||[]).map(a=>`
-    <div class="card setup" data-t="${esc(a.ticker)}"><div class="row"><div><div class="tk">${esc(a.ticker)}</div><div class="nm">${esc(a.name||'')}</div></div><div style="text-align:right">${arrow(a.direction)} <b class="mono ${cls(a.median_return)}">${pct(a.median_return)}</b></div></div>
-    ${meter(a)}<div class="sub mono">${px(a.ranges.week.low)} – ${px(a.ranges.week.high)} · score ${a.score}</div></div>`).join('')}</div>`;
-  h += `<div class="sec-title">Top long setups <small>reward ≥ 2× risk · earnings excluded</small></div>
-    <div class="grid g3">${(L.top_long||[]).slice(0,6).map(setupCard).join('') || '<div class="empty">No qualifying long setups today.</div>'}</div>
-    <div class="sec-title">Top short setups</div>
-    <div class="grid g3">${(L.top_short||[]).slice(0,6).map(setupCard).join('') || '<div class="empty">No qualifying short setups today.</div>'}</div>`;
-  const S = L.signals || {};
-  const sigBlock = (k, title) => (S[k]||[]).length ? `<div class="card"><h3>${title} <span class="r">${S[k].length}</span></h3>${(S[k]||[]).slice(0,8).map(a=>`<div class="row click" data-t="${esc(a.ticker)}" style="padding:5px 0;cursor:pointer"><b>${esc(a.ticker)}</b><span class="mono ${cls(a.median_return)}">${pct(a.median_return)} · ${a.score}</span></div>`).join('')}</div>` : '';
-  const blocks = [['breakout','🚀 Breakouts'],['breakdown','🕳 Breakdowns'],['reversal_up','↩ Bounce candidates'],['reversal_down','↪ Rollover risk'],['momentum_up','📈 Momentum up'],['gap_up','⬆ Gap up calls'],['gap_down','⬇ Gap down calls'],['volume_surge','🔊 Volume surges'],['volatility','⚡ Big swings ahead']].map(([k,t])=>sigBlock(k,t)).join('');
-  if (blocks) h += `<div class="sec-title">Signals</div><div class="grid g3">${blocks}</div>`;
-  if ((L.aligned||[]).length) h += `<div class="sec-title">All timeframes agree <small>1-hour · daily · weekly point the same way</small></div>${rowsTable(L.aligned, STD_COLS)}`;
-  if ((L.earnings_paused||[]).length) h += `<div class="sec-title">Paused for earnings</div><div class="warnbox">Charts can't see earnings surprises, so these signals are switched off until after the report: ${L.earnings_paused.map(a=>`<b>${esc(a.ticker)}</b> (${esc(a.earnings)})`).join(', ')}</div>`;
-  if (L.portfolio) {
-    const P = L.portfolio;
-    h += `<div class="sec-title">Your portfolio <small>dollar amounts stay private — sent to Telegram only</small></div><div class="grid g2">
-      <div class="card"><h3>Predicted next ${L.horizon} days</h3><div class="hero ${cls(P.median_return)}">${pct(P.median_return)}</div><div class="sub">${pct0(P.p_down)} chance of a down week</div>
-      ${P.hedge?`<div class="warnbox" style="margin-top:12px">🛡 Hedge suggested: your holdings move ${P.hedge.beta.toFixed(2)}× with ${esc(P.hedge.index)}. Consider ${esc(P.hedge.inverse_etf)} or ${esc(P.hedge.index)} puts. Details in Telegram.</div>`:''}</div>
-      <div class="card"><h3>By holding</h3>${P.holdings.map(x=>`<div class="hbar"><span class="mono">${esc(x.ticker)} <span class="muted">${pct0(x.weight)}</span></span>${divBar(x.ret, .1)}<span class="mono ${cls(x.ret)}" style="text-align:right">${pct(x.ret)}</span></div>`).join('')}</div></div>`;
+  const [Q, N] = await Promise.all([get('quotes.json'), get('livenews.json')]);
+  const m = L.mood || {}, v = L.vix || {}, I = L.indices || [], H = L.horizon || 5;
+  const q = Object.fromEntries(((Q && Q.rows) || []).map(r => [r.ticker, r]));
+  const upI = I.filter(a => (a.median_return||0) > 0), best = I.slice().sort((a,b) => (b.median_return||0) - (a.median_return||0))[0], worst = I.slice().sort((a,b) => (a.median_return||0) - (b.median_return||0))[0];
+  const moodWord = m.label === 'RISK-ON' ? 'Markets look strong.' : m.label === 'RISK-OFF' ? 'Markets look weak.' : 'Markets look neutral.';
+  const second = best && (best.median_return||0) > 0.004 ? `${esc(best.name || best.ticker)} has the strongest forecast.` : upI.length ? 'No index stands out.' : 'Every index is forecast lower.';
+  let h = `<div class="lede"><h1>${moodWord} ${second}</h1><p>${pct0(m.pct_up)} of ${m.n||0} stocks are forecast to rise over the next ${H} trading days.${best ? ` ${esc(best.name||best.ticker)} is forecast ${signed(best.median_return)}` : ''}${worst && worst !== best ? `, ${esc(worst.name||worst.ticker)} ${signed(worst.median_return)}.` : '.'} These forecasts have been right ${L.report?.hit_rate != null ? pct0(L.report.hit_rate) : 'an unknown share'} of the time, so treat them as a lean, not a promise.</p></div>`;
+
+  // indexes: today vs forecast, with confidence in words
+  h += `<div class="sec-title">The four indexes<small>What happened today, and the forecast for the next ${H} trading days</small></div><div class="card"><div class="cmp head"><span></span><span>Today</span><span>Next ${H} days</span></div>${I.map(a => { const c = conf(a), t = q[a.ticker];
+    return `<div class="cmp setup" data-t="${esc(a.ticker)}"><span><b>${esc(a.name||a.ticker)}</b><small>${esc(a.ticker)}, ${c.word}: ${c.k} of ${c.n} simulated futures agree</small></span><span class="${t ? cls(t.change_pct) : 'muted'}">${t && t.change_pct != null ? signed(t.change_pct/100, 2) : '—'}</span><span class="big ${cls(a.median_return)}">${signed(a.median_return)}</span></div>`; }).join('')}
+    ${v.level != null ? `<div class="cmp"><span><b>Fear gauge</b><small>VIX. Above 20 means investors are nervous; ${v.direction==='up'?'it is forecast to rise':'it is forecast to ease'}</small></span><span>${px(v.level)}</span><span class="big ${v.median_return > 0 ? 'dn' : 'up'}">${signed(v.median_return)}</span></div>` : ''}</div>`;
+
+  // best idea
+  const top = (L.top_long || [])[0], stale = top && daysOld(top.asof) > 5;
+  h += `<div class="sec-title">Best trade idea<small>The highest-scoring stock where the possible gain is at least twice the possible loss</small></div>`;
+  if (!top) h += '<div class="empty">No stock qualifies today. That is normal on mixed days.</div>';
+  else { const c = conf(top);
+    h += `<div class="spot setup ${stale ? 'old' : ''}" data-t="${esc(top.ticker)}"><div class="sub2">${stale ? `From the scan on ${niceDate(top.asof)}. It is out of date; a new scan runs overnight.` : `From the scan on ${niceDate(top.asof)}`}</div><div class="tick">${esc(top.ticker)}</div><div class="nm2">${esc(top.name||top.sector||'')}</div>
+      <div class="two"><div><span>Forecast, ${H} days</span><b>${signed(top.median_return)}</b></div><div><span>Score out of 100</span><b>${top.score}</b></div></div>
+      <p>${planSentence(top)} ${c.k} of ${c.n} simulated futures agree.</p></div>`;
+    const more = (L.top_long || []).slice(1, 5), shorts = (L.top_short || []).slice(0, 3);
+    if (more.length) h += `<div class="card" style="margin-top:10px"><h3>Next best ideas to buy</h3>${more.map(ideaRow).join('')}</div>`;
+    if (shorts.length) h += `<div class="card" style="margin-top:10px"><h3>Stocks forecast to fall</h3>${shorts.map(ideaRow).join('')}</div>`;
   }
+
+  // bulls vs bears
+  const nb = N?.counts?.bull, nr = N?.counts?.bear;
+  const bulls = [[upI.length + ' of ' + I.length, 'indexes forecast up'], [pct0(m.pct_up), 'of stocks forecast up'], [m.breakouts != null ? m.breakouts : null, 'stocks breaking out to new highs'], [nb != null ? nb : null, 'bullish news stories']].filter(x => x[0] != null);
+  const bears = [[(I.length - upI.length) + ' of ' + I.length, 'indexes forecast down'], [pct0(1 - (m.pct_up||0)), 'of stocks forecast down'], [m.breakdowns != null ? m.breakdowns : null, 'stocks breaking down to new lows'], [nr != null ? nr : null, 'bearish news stories']].filter(x => x[0] != null);
+  h += `<div class="sec-title">Bulls against bears<small>The evidence on each side, counted</small></div><div class="vs"><div class="bull"><h4>For the bulls</h4>${bulls.map(x => `<div><b>${x[0]}</b><span>${x[1]}</span></div>`).join('')}</div><div class="bear"><h4>For the bears</h4>${bears.map(x => `<div><b>${x[0]}</b><span>${x[1]}</span></div>`).join('')}</div></div>`;
+
+  // your stocks today
+  const W = (L.watchlist || []).map(a => a.ticker), rows = W.map(t => q[t]).filter(r => r && r.change_pct != null).sort((a,b) => b.change_pct - a.change_pct);
+  if (rows.length){ const ups = rows.filter(r => r.change_pct >= 0).length;
+    h += `<div class="sec-title">Your stocks today<small>${ups} up, ${rows.length - ups} down. Prices updated ${ago(Q.generated)}</small></div><div class="card">${rows.map(r => `<div class="wl setup" data-t="${esc(r.ticker)}"><b>${esc(r.ticker)}</b><span>${px(r.price)}</span><i class="${r.change_pct >= 0 ? 'u' : 'd'}">${signed(r.change_pct/100, 2)}</i></div>`).join('')}</div>`; }
+
+  // in the news
+  if (N && (N.hot||[]).length) h += `<div class="sec-title">In the news<small>Companies with the most stories, and which way the coverage leans</small></div><div class="card">${N.hot.slice(0,5).map(x => `<div class="idea setup" data-t="${esc(x.t)}"><div><div class="tk">${esc(x.t)}</div><div class="sub">${x.n} stories: ${x.bull||0} bullish, ${x.bear||0} bearish</div></div><div class="big ${x.bull > x.bear ? 'up' : x.bear > x.bull ? 'dn' : ''}" style="font-size:17px">${x.bull > x.bear ? 'mostly bullish' : x.bear > x.bull ? 'mostly bearish' : 'mixed'}</div></div>`).join('')}<button class="btn" style="width:100%;margin-top:12px" onclick="location.hash='livenews'">Open live news</button></div>`;
+
+  // scoreboard
+  const P = L.paper, R = L.report || {};
+  h += `<div class="sec-title">Is the app any good?<small>Every forecast is graded once its ${H} days are up</small></div><div class="grid g2">
+    <div class="card"><h3>Forecasts that were right</h3><div class="hero">${R.hit_rate != null ? pct0(R.hit_rate) : '—'}</div><div class="sub" style="margin-top:6px">${R.n ? `Out of ${R.n.toLocaleString()} graded calls. A coin flip scores 50%, so this is a small edge at best.` : `${R.pending||0} calls are waiting to be graded.`}</div></div>
+    <div class="card"><h3>Practice account against the market</h3>${P ? `<div class="hero ${cls(P.return - P.spy_return)}">${signed(P.return - P.spy_return)}</div><div class="sub" style="margin-top:6px">The practice account is ${signed(P.return)} and the S&P 500 is ${signed(P.spy_return)} over the same period. No real money is involved.</div>` : '<div class="sub">Starts after the first scan.</div>'}</div></div>`;
+
+  const S = L.signals || {};
+  const sigBlock = (k, title, why) => (S[k]||[]).length ? `<div class="card"><h3>${title} <span class="r">${why}</span></h3>${(S[k]||[]).slice(0,6).map(ideaRow).join('')}</div>` : '';
+  const blocks = [['breakout','Breakouts','Closed above a 20-day high and forecast to keep going'],['breakdown','Breakdowns','Closed below a 20-day low and forecast to keep falling'],['reversal_up','Bounce candidates','Beaten down, forecast to turn up'],['reversal_down','Rollover risk','Run up, forecast to turn down'],['momentum_up','Momentum','Already rising and forecast to continue'],['volume_surge','Volume surges','Trading far more than usual'],['volatility','Big swings ahead','Forecast to move much more than normal']].map(x => sigBlock(...x)).join('');
+  if (blocks) h += `<div class="sec-title">Signals<small>Stocks grouped by what the chart and the forecast say together</small></div><div class="grid g3">${blocks}</div>`;
+  if ((L.earnings_paused||[]).length) h += `<div class="sec-title">Paused for earnings</div><div class="warnbox">Charts cannot see earnings surprises, so forecasts for these are switched off until after the report: ${L.earnings_paused.map(a=>`<b>${esc(a.ticker)}</b> (${esc(a.earnings)})`).join(', ')}</div>`;
+  if (L.portfolio) { const F = L.portfolio;
+    h += `<div class="sec-title">Your portfolio<small>Dollar amounts stay private and go to Telegram only</small></div><div class="grid g2">
+      <div class="card"><h3>Forecast for the next ${H} days</h3><div class="hero ${cls(F.median_return)}">${signed(F.median_return)}</div><div class="sub">${pct0(F.p_down)} chance of a down week</div>
+      ${F.hedge?`<div class="warnbox" style="margin-top:12px">A hedge is suggested: your holdings move ${F.hedge.beta.toFixed(2)} times as much as ${esc(F.hedge.index)}. Consider ${esc(F.hedge.inverse_etf)} or ${esc(F.hedge.index)} puts. Details are in Telegram.</div>`:''}</div>
+      <div class="card"><h3>By holding</h3>${F.holdings.map(x=>`<div class="wl"><b>${esc(x.ticker)}</b><span>${pct0(x.weight)} of portfolio</span><i class="${x.ret >= 0 ? 'u' : 'd'}">${signed(x.ret)}</i></div>`).join('')}</div></div>`; }
   $('#view').innerHTML = h; bindSetups($('#view'));
 }
 
