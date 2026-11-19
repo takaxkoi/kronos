@@ -5,19 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kronos Oracle</title>
 <meta name="description" content="Private AI market forecasting: thirty simulated futures per stock, trade plans, and a report card that grades every call.">
-<meta name="theme-color" content="#0B0B0D">
+<meta name="theme-color" content="#141414">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0A0A0C;--panel:#131316;--line:#25252B;--ink:#EEE9DC;--ink2:#B3AC9C;--muted:#7A7466;--gold:#BF9A3F;--gold2:#DCBE6E;--up:#1F9E89;--dn:#E0565B;
-  --serif:'Fraunces',Georgia,serif;--mono:'JetBrains Mono',ui-monospace,monospace;color-scheme:dark}
+:root{--bg:#0A0A0C;--panel:#1E1E1E;--line:#25252B;--ink:#EEE9DC;--ink2:#B3AC9C;--muted:#7A7466;--gold:#C6F432;--gold2:#DCBE6E;--up:#C6F432;--dn:#FF7A59;
+  --serif:'Space Grotesk',system-ui,sans-serif;--mono:'Space Grotesk',system-ui,sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 'Space Grotesk',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
 nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
@@ -39,7 +39,7 @@ h1{font:400 clamp(44px,7vw,84px)/1.02 var(--serif);letter-spacing:-.02em;margin:
 h1 em{font-style:italic;color:var(--gold2)}
 .lede{font-size:18px;color:var(--ink2);max-width:540px}
 .cta{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap}
-.glow{position:absolute;top:-200px;right:-200px;width:700px;height:700px;background:radial-gradient(closest-side,rgba(191,154,63,.16),transparent);pointer-events:none;z-index:0}
+.glow{position:absolute;top:-200px;right:-200px;width:700px;height:700px;background:radial-gradient(closest-side,rgba(198,244,50,.16),transparent);pointer-events:none;z-index:0}
 .fan{width:100%;height:auto;display:block}
 .fan-cap{font:500 11px var(--mono);color:var(--muted);letter-spacing:.08em;margin-top:8px;text-align:right}
 /* sections */
@@ -50,8 +50,8 @@ h2 em{font-style:italic;color:var(--gold2)}
 .grid{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:44px}
 @media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.grid{grid-template-columns:1fr}}
-.feat{background:linear-gradient(180deg,#16161A,var(--panel));border:1px solid var(--line);border-radius:18px;padding:24px;min-height:190px}
-.feat .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:rgba(191,154,63,.1);border:1px solid rgba(191,154,63,.3);margin-bottom:16px}
+.feat{background:linear-gradient(180deg,#1E1E1E,var(--panel));border:1px solid var(--line);border-radius:18px;padding:24px;min-height:190px}
+.feat .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:rgba(198,244,50,.1);border:1px solid rgba(198,244,50,.3);margin-bottom:16px}
 .feat h3{font:600 17px Inter;margin:0 0 8px}
 .feat p{margin:0;color:var(--ink2);font-size:14.5px}
 .steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-top:44px;counter-reset:s}
@@ -59,7 +59,7 @@ h2 em{font-style:italic;color:var(--gold2)}
 @media(max-width:520px){.steps{grid-template-columns:1fr}}
 .step{padding:0 22px 0 0;position:relative}
 .step:before{counter-increment:s;content:"0" counter(s);font:500 12px var(--mono);color:var(--gold2);letter-spacing:.14em;display:block;margin-bottom:14px}
-.step:after{content:"";position:absolute;top:7px;left:34px;right:16px;height:1px;background:linear-gradient(90deg,rgba(191,154,63,.5),transparent)}
+.step:after{content:"";position:absolute;top:7px;left:34px;right:16px;height:1px;background:linear-gradient(90deg,rgba(198,244,50,.5),transparent)}
 .step h4{font:600 16px Inter;margin:0 0 6px}
 .step p{margin:0;color:var(--ink2);font-size:14px}
 .honest{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
@@ -81,7 +81,7 @@ input:focus{outline:none;border-color:var(--gold)}
 .msg{min-height:22px;margin-top:14px;font-size:13.5px;color:var(--ink2)}
 .msg.err{color:#F08C8F}.msg.ok{color:#5CC9B4}
 .link{background:none;border:0;color:var(--gold2);font:500 13px Inter;cursor:pointer;padding:0;margin-top:14px}
-.badge{display:inline-block;font:500 11px var(--mono);letter-spacing:.14em;color:var(--gold2);border:1px solid rgba(191,154,63,.4);border-radius:999px;padding:5px 12px;margin-bottom:16px}
+.badge{display:inline-block;font:500 11px var(--mono);letter-spacing:.14em;color:var(--gold2);border:1px solid rgba(198,244,50,.4);border-radius:999px;padding:5px 12px;margin-bottom:16px}
 footer{border-top:1px solid var(--line);padding:34px 0 50px;color:var(--muted);font-size:12.5px}
 footer .row{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s ease}
@@ -92,7 +92,7 @@ footer .row{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 <body>
 <div class="wrap">
   <nav>
-    <a class="logo" href="#"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#16161A" stroke="#33333B"/><path d="M14 44 L26 30 L34 37 L50 18" stroke="#BF9A3F" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="18" r="4" fill="#DCBE6E"/></svg>KRONOS <b>ORACLE</b></a>
+    <a class="logo" href="#"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#1E1E1E" stroke="#444444"/><path d="M14 44 L26 30 L34 37 L50 18" stroke="#C6F432" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="18" r="4" fill="#DCBE6E"/></svg>KRONOS <b>ORACLE</b></a>
     <div class="nav-links"><a class="hide-m" href="#how">How it works</a><a class="hide-m" href="#honest">Report card</a><a class="btn sm" id="navBtn" href="#signin">Sign in</a></div>
   </nav>
 
@@ -223,9 +223,9 @@ $('#forgot').addEventListener('click', () => {
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const hist = []; let y = 260;
   for (let i = 0; i <= 30; i++){ y += (rnd() - 0.48) * 14; hist.push([i * split / 30, y]); }
-  let s = `<defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#BF9A3F" stop-opacity=".0"/><stop offset=".25" stop-color="#BF9A3F" stop-opacity=".55"/><stop offset="1" stop-color="#DCBE6E" stop-opacity=".15"/></linearGradient></defs>`;
+  let s = `<defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#C6F432" stop-opacity=".0"/><stop offset=".25" stop-color="#C6F432" stop-opacity=".55"/><stop offset="1" stop-color="#DCBE6E" stop-opacity=".15"/></linearGradient></defs>`;
   for (let g = 0; g < 6; g++) s += `<line x1="0" x2="${W}" y1="${60 + g * 56}" y2="${60 + g * 56}" stroke="#1E1E23"/>`;
-  s += `<line x1="${split}" x2="${split}" y1="30" y2="${H - 20}" stroke="#33333B" stroke-dasharray="3 5"/>`;
+  s += `<line x1="${split}" x2="${split}" y1="30" y2="${H - 20}" stroke="#444444" stroke-dasharray="3 5"/>`;
   s += `<polyline points="${hist.map(p => p.join(',')).join(' ')}" fill="none" stroke="#EEE9DC" stroke-width="2.2" stroke-linejoin="round"/>`;
   const end = hist[hist.length - 1];
   const paths = [];
@@ -235,7 +235,7 @@ $('#forgot').addEventListener('click', () => {
     paths.push(pts);
   }
   paths.forEach((pts, k) => { s += `<polyline class="fp" style="animation-delay:${k * 40}ms" points="${pts.map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="url(#g)" stroke-width="1.2"/>`; });
-  s += `<circle cx="${end[0]}" cy="${end[1]}" r="5" fill="#DCBE6E"/><circle cx="${end[0]}" cy="${end[1]}" r="12" fill="none" stroke="#BF9A3F" stroke-opacity=".4"><animate attributeName="r" values="6;16;6" dur="3s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values=".6;0;.6" dur="3s" repeatCount="indefinite"/></circle>`;
+  s += `<circle cx="${end[0]}" cy="${end[1]}" r="5" fill="#DCBE6E"/><circle cx="${end[0]}" cy="${end[1]}" r="12" fill="none" stroke="#C6F432" stroke-opacity=".4"><animate attributeName="r" values="6;16;6" dur="3s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values=".6;0;.6" dur="3s" repeatCount="indefinite"/></circle>`;
   svg.innerHTML = s;
   const st = document.createElement('style');
   st.textContent = `.fp{stroke-dasharray:600;stroke-dashoffset:600;animation:draw 2.2s ease forwards}@keyframes draw{to{stroke-dashoffset:0}}@media (prefers-reduced-motion: reduce){.fp{animation:none;stroke-dashoffset:0}}`;
