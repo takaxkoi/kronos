@@ -30,10 +30,10 @@ body{min-height:100vh}
 a{color:var(--gold);text-decoration:none}
 button,input,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.wrap{max-width:1240px;margin:0 auto;padding:0 14px 80px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 calc(14px + env(safe-area-inset-right,0px)) calc(80px + env(safe-area-inset-bottom,0px)) calc(14px + env(safe-area-inset-left,0px))}
 
 /* top bar: one sticky row; everything else lives in the menu */
-header.top{position:sticky;top:0;z-index:30;background:var(--bg);padding:10px 0 8px}
+header.top{position:sticky;top:0;z-index:30;background:var(--bg);padding:calc(10px + env(safe-area-inset-top,0px)) 0 8px}
 .bar{display:flex;gap:8px;align-items:center}
 .menubtn{flex:1;min-width:0;height:52px;display:flex;align-items:center;gap:10px;padding:0 16px;border:0;border-radius:26px;background:var(--panel);cursor:pointer;font-weight:700;font-size:17px;text-align:left}
 .menubtn span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -41,7 +41,7 @@ header.top{position:sticky;top:0;z-index:30;background:var(--bg);padding:10px 0 
 .menubtn[aria-expanded="true"]{background:var(--ink);color:var(--bg)}
 .iconbtn{flex:none;width:52px;height:52px;border:0;border-radius:26px;background:var(--panel);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .iconbtn:active,.menubtn:active{background:var(--panel2)}
-.menu{position:absolute;left:-14px;right:-14px;top:100%;max-height:calc(100vh - 76px);overflow-y:auto;background:var(--bg);border-bottom:1px solid var(--line2);padding:6px 14px 20px;box-shadow:0 30px 60px rgba(0,0,0,.6)}
+.menu{position:absolute;left:-14px;right:-14px;top:100%;max-height:calc(100vh - 76px - env(safe-area-inset-top,0px));overflow-y:auto;background:var(--bg);border-bottom:1px solid var(--line2);padding:6px 14px 20px;box-shadow:0 30px 60px rgba(0,0,0,.6)}
 .menu input{width:100%;height:52px;border:2px solid var(--line2);border-radius:26px;background:var(--panel);padding:0 18px;font-size:17px;font-weight:500}
 .menu input:focus{outline:none;border-color:var(--gold)}
 .menu h4{margin:18px 4px 8px;font-size:13px;font-weight:500;color:var(--muted)}
