@@ -333,7 +333,10 @@ function ideaRow(a){
 async function viewToday(){
   const L = LATEST;
   if (!L) return setupNeeded();
-  const [Q, N] = await Promise.all([get('quotes.json'), get('livenews.json')]);
+  const [Q, N, SC] = await Promise.all([get('quotes.json'), get('livenews.json'), get('scanner.json')]);
+  // the overnight stock scan can be newer than the daily summary; use whichever ideas are fresher
+  const fresh = SC && (SC.top_long||[]).length && (!(L.top_long||[]).length || new Date((SC.top_long[0]||{}).asof||0) > new Date((L.top_long[0]||{}).asof||0));
+  const TL = fresh ? SC.top_long : (L.top_long||[]), TS = fresh ? (SC.top_short||[]) : (L.top_short||[]);
   const m = L.mood || {}, v = L.vix || {}, I = L.indices || [], H = L.horizon || 5;
   const q = Object.fromEntries(((Q && Q.rows) || []).map(r => [r.ticker, r]));
   const upI = I.filter(a => (a.median_return||0) > 0), best = I.slice().sort((a,b) => (b.median_return||0) - (a.median_return||0))[0], worst = I.slice().sort((a,b) => (a.median_return||0) - (b.median_return||0))[0];
@@ -347,14 +350,14 @@ async function viewToday(){
     ${v.level != null ? `<div class="cmp"><span><b>Fear gauge</b><small>VIX. Above 20 means investors are nervous; ${v.direction==='up'?'it is forecast to rise':'it is forecast to ease'}</small></span><span>${px(v.level)}</span><span class="big ${v.median_return > 0 ? 'dn' : 'up'}">${signed(v.median_return)}</span></div>` : ''}</div>`;
 
   // best idea
-  const top = (L.top_long || [])[0], stale = top && daysOld(top.asof) > 5;
+  const top = TL[0], stale = top && daysOld(top.asof) > 5;
   h += `<div class="sec-title">Best trade idea<small>The highest-scoring stock where the possible gain is at least twice the possible loss</small></div>`;
   if (!top) h += '<div class="empty">No stock qualifies today. That is normal on mixed days.</div>';
   else { const c = conf(top);
     h += `<div class="spot setup ${stale ? 'old' : ''}" data-t="${esc(top.ticker)}"><div class="sub2">${stale ? `From the scan on ${niceDate(top.asof)}. It is out of date; a new scan runs overnight.` : `From the scan on ${niceDate(top.asof)}`}</div><div class="tick">${esc(top.ticker)}</div><div class="nm2">${esc(top.name||top.sector||'')}</div>
       <div class="two"><div><span>Forecast, ${H} days</span><b>${signed(top.median_return)}</b></div><div><span>Score out of 100</span><b>${top.score}</b></div></div>
       <p>${planSentence(top)} ${c.k} of ${c.n} simulated futures agree.</p></div>`;
-    const more = (L.top_long || []).slice(1, 5), shorts = (L.top_short || []).slice(0, 3);
+    const more = TL.slice(1, 5), shorts = TS.slice(0, 3);
     if (more.length) h += `<div class="card" style="margin-top:10px"><h3>Next best ideas to buy</h3>${more.map(ideaRow).join('')}</div>`;
     if (shorts.length) h += `<div class="card" style="margin-top:10px"><h3>Stocks forecast to fall</h3>${shorts.map(ideaRow).join('')}</div>`;
   }
