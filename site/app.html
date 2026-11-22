@@ -248,8 +248,8 @@ const meter = a => { const n = a.samples||0, up = Math.round((a.p_up||0)*n); let
 
 let LATEST = null, REPORT = null;
 const MENU = [
-  ['Markets', [['brief','Daily brief'],['today','Today'],['spx','S&P 500'],['fear','Fear and greed'],['live','Live prices'],['market','Market map'],['scanner','S&P 500 scan'],['mscan','Market scan'],['other','Crypto, FX, gold']]],
-  ['Stocks', [['term','Terminal'],['watch','Watchlist'],['research','AI research'],['lenses','Lenses']]],
+  ['Markets', [['brief','Daily brief'],['today','Today'],['spx','S&P 500'],['fear','Fear and greed'],['calendar','Calendar'],['live','Live prices'],['market','Market map'],['scanner','S&P 500 scan'],['mscan','Market scan'],['other','Crypto, FX, gold']]],
+  ['Stocks', [['term','Terminal'],['watch','Watchlist'],['earn','Earnings moves'],['insiders','Insider trades'],['research','AI research'],['lenses','Lenses']]],
   ['News and crowd', [['livenews','Live news'],['news','News mood'],['wsb','WallStreetBets']]],
   ['Labs', [['edge','Edge Lab'],['filings','Filings Lab'],['perf','Performance'],['report','Report card'],['backtest','Backtest Lab']]],
   ['Account', [['league','Strategy league'],['paper','Paper trading'],['journal','Journal'],['setup','Setup']]],
@@ -364,7 +364,7 @@ async function viewToday(){
     h += `<div class="spot setup ${stale ? 'old' : ''}" data-t="${esc(top.ticker)}"><div class="sub2">${stale ? `From the scan on ${niceDate(top.asof)}. It is out of date; a new scan runs overnight.` : `From the scan on ${niceDate(top.asof)}`}</div><div class="tick">${esc(top.ticker)}</div><div class="nm2">${esc(top.name||top.sector||'')}</div>
       <div class="two"><div><span>Forecast, ${H} days</span><b>${signed(top.median_return)}</b></div><div><span>Score out of 100</span><b>${top.score}</b></div></div>
       <p>${planSentence(top)} ${c.k} of ${c.n} simulated futures agree.</p></div>`;
-    const more = TL.slice(1, 5), shorts = TS.slice(0, 3);
+    const more = TL.slice(1, 5), shorts = [];  // the app no longer calls single stocks down (see Report card)
     if (more.length) h += `<div class="card" style="margin-top:10px"><h3>Next best ideas to buy</h3>${more.map(ideaRow).join('')}</div>`;
     if (shorts.length) h += `<div class="card" style="margin-top:10px"><h3>Stocks forecast to fall</h3>${shorts.map(ideaRow).join('')}</div>`;
   }
@@ -609,7 +609,7 @@ async function viewReport(){
   const tbl = (rows, label) => rows && rows.length ? `<div class="tbl"><table><thead><tr><th>${label}</th><th class="n">Calls</th><th class="n">Hit rate</th><th class="n">Avg move in called direction</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.key)}</td><td class="n">${r.n}</td><td class="n ${r.hit_rate>=.5?'up':'dn'}">${pct0(r.hit_rate)}</td><td class="n ${cls(r.avg_move)}">${pct(r.avg_move,2)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Not enough calls yet.</div>';
   const st = R.streak || {}, P = R.plans || {};
   let h = await accuracyHTML() + `<div class="grid g4 keep2">
-    <div class="card"><h3>Hit rate</h3><div class="hero gold">${pct0(R.hit_rate)}</div><div class="sub">direction right on ${R.n} graded calls · coin flip = 50%</div></div>
+    <div class="card"><h3>Hit rate</h3><div class="hero gold">${pct0(R.hit_rate)}</div><div class="sub">of ${R.n.toLocaleString()} calls that follow the rules${R.always_up != null ? '. Always saying up: ' + pct0(R.always_up) : ''}${R.every ? '. Every call ever made: ' + pct0(R.every.hit_rate) : ''}</div></div>
     <div class="card"><h3>High-score calls</h3><div class="hero ${R.hit_rate_high>=.5?'up':'dn'}">${pct0(R.hit_rate_high)}</div><div class="sub">score 75+ · ${R.n_high} calls</div></div>
     <div class="card"><h3>Streak</h3><div class="hero ${st.current_type==='win'?'up':'dn'}">${st.current||0}${st.current_type==='win'?'W':'L'}</div><div class="sub">best ${st.longest_win||0}W · worst ${st.longest_loss||0}L (score 75+)</div></div>
     <div class="card"><h3>Trade plans</h3><div class="hero">${P.win_rate!=null?pct0(P.win_rate):'—'}</div><div class="sub">${P.target||0} hit target · ${P.stop||0} stopped · ${P.time||0} timed out · avg ${pct(P.avg_trade_return,2)}</div></div></div>`;
@@ -1084,7 +1084,7 @@ async function viewFear(){
 
 let SPX = {under:'above50', per:'d1', mv:'d1', side:'up'};
 async function viewSpx(){
-  const X = await get('spx.json');
+  const [X, RG] = await Promise.all([get('spx.json'), get('regime.json')]);
   if (!X || !X.stats){ $('#view').innerHTML = '<div class="empty">The S&P 500 page fills in after the next market close.</div>'; return; }
   const S = X.stats, I = (LATEST && LATEST.indices || []).find(a => a.ticker === 'SPY');
   let h = `<div class="lede"><div class="sub" style="margin-bottom:6px">S&P 500, tracked through the SPY fund · close of ${dateS(S.date)}</div><h1>${px(S.last)}, ${S.from_high < -0.002 ? Math.abs(S.from_high*100).toFixed(1) + '% below its record' : 'at a record high'}</h1><p>${esc(X.insights[1]||'')}</p></div>`;
@@ -1092,6 +1092,7 @@ async function viewSpx(){
   h += chartCard('Price');
   if (I) h += `<div class="card" style="margin-top:12px"><h3>The model's forecast</h3><div class="idea click" data-go="t/SPY"><span><b>Next 5 trading days</b><small style="display:block;color:var(--muted)">${I.agree_count} of ${I.samples} simulated futures point ${I.direction}. Likely range ${px(I.ranges?.week?.low)} to ${px(I.ranges?.week?.high)}.</small></span><span class="big ${cls(I.median_return)}">${sgn(I.median_return)}</span></div></div>`;
   h += `<div class="sec-title">What stands out</div><div class="card brief">${X.insights.slice(2).map(t => `<div class="bl"><i></i><span>${esc(t)}</span></div>`).join('')}</div>`;
+  h += regimeHTML(RG);
   h += `<div class="sec-title">Lines to watch<small>Prices where buyers or sellers have tended to show up</small></div><div class="card">${[['Record high', S.high], ['20-day high', S.hi20], ['50-day average', S.ma50], ['200-day average', S.ma200], ['20-day low', S.lo20], ['One-year low', S.low52]].sort((a,b) => b[1]-a[1]).map(([l,v]) => `<div class="idea"><span><b>${l}</b><small style="display:block;color:var(--muted)">${v >= S.last ? 'above' : 'below'} the last close</small></span><span style="text-align:right"><span class="big">${px(v)}</span><small style="display:block;color:var(--muted)">${sgn(v/S.last-1)} away</small></span></div>`).join('')}</div>`;
   h += `<div class="sec-title">Under the surface<small>The index is ${X.stocks} stocks. This shows how many are taking part.</small></div><div class="card"><div class="toolbar">${segHTML('spxUnder', [['above50','Above 50-day'],['above200','Above 200-day'],['hl','New highs and lows'],['fear_greed','Fear and greed']], SPX.under)}</div><div id="spxUnderC"></div><div class="sub" id="spxUnderT"></div></div>`;
   h += `<div class="sec-title">Sectors<small>Tap a sector to open its fund</small></div><div class="card"><div class="toolbar">${segHTML('spxPer', [['d1','Day'],['d5','Week'],['d21','Month'],['ytd','This year']], SPX.per)}</div><div id="spxSec"></div></div>`;
@@ -1157,7 +1158,59 @@ async function accuracyHTML(){
     <div class="sec-title">What gets more calls right<small>Each rule comes from the numbers below</small></div><div class="card">${A.fixes.map(f => `<div class="idea"><span><b>${esc(f.rule)}</b><small style="display:block;color:var(--muted);line-height:1.45;margin-top:2px">${esc(f.why)}</small></span><span style="font-size:12.5px;font-weight:700;white-space:nowrap;color:${f.status==='Waiting'?'var(--muted)':'var(--gold)'}">${esc(f.status)}</span></div>`).join('')}</div>
     <div class="sec-title">Where the app is right and wrong<small>Green means it beat always saying up</small></div><div class="card">${t(L.by_direction, 'What it said')}</div><div class="card" style="margin-top:10px">${t(L.by_span, 'Time frame')}</div><div class="card" style="margin-top:10px">${t(L.by_kind, 'Market')}</div><div class="card" style="margin-top:10px">${t(L.by_sure, 'How sure the model was')}</div>
     <div class="sec-title">How often stocks really rise<small>${A.base.stocks} big stocks, next 5 trading days, ${dateS(A.base.first)} to ${dateS(A.base.last)}. A forecast has to beat these.</small></div><div class="card"><div class="tbl"><table><thead><tr><th>Situation</th><th class="n">Rose</th><th class="n">Average move</th></tr></thead><tbody>${A.base.rows.map(r => `<tr><td><b>${esc(r.name)}</b><small style="display:block;color:var(--muted)">${r.n.toLocaleString()} cases</small></td><td class="n ${r.up > A.base.rows[0].up + 0.005 ? 'up' : r.up < A.base.rows[0].up - 0.005 ? 'dn' : ''}">${(r.up*100).toFixed(1)}%</td><td class="n">${sgn(r.avg, 2)}</td></tr>`).join('')}</tbody></table></div></div>
-    <div class="sec-title">The full scorecard</div>`;
+    <div class="sec-title">The full scorecard<small>${esc((REPORT && REPORT.rules) || '')}</small></div>`;
+}
+
+/* ---------- Calendar, insiders, earnings moves, regime ---------- */
+const bigMoney = v => v >= 1e9 ? '$' + (v/1e9).toFixed(1) + ' billion' : v >= 1e6 ? '$' + (v/1e6).toFixed(1) + ' million' : '$' + Math.round(v).toLocaleString();
+let CAL = {only:'High'};
+async function viewCalendar(){
+  const [E, ER, B] = await Promise.all([get('econ.json'), get('earnings.json'), get('brief.json')]);
+  const ev = (E && E.events) || [], er = ((ER && ER.rows) || []).filter(r => r.next_days != null && r.next_days <= 45);
+  const today = new Date().toLocaleDateString('en-CA', {timeZone:'America/New_York'}), todays = ev.filter(x => x.date === today && x.impact === 'High');
+  let h = `<div class="lede"><h1>${todays.length ? 'Today: ' + esc(todays.map(x => x.title).join(', ')) : ev.length ? 'Nothing major is scheduled today.' : 'No calendar yet.'}</h1><p>${ev.length ? 'Scheduled US reports for the next 10 days. Markets move when a number lands far from what was expected, so the expected figure matters as much as the date.' : esc((E && E.status) || 'The economic calendar loads with the next morning run.')}</p></div>`;
+  if (ev.length) h += `<div class="sec-title">Economic reports<small>Times are US Eastern</small></div><div class="card"><div class="toolbar">${segHTML('calOnly', [['High','Big ones'],['All','Everything']], CAL.only)}</div><div id="calList"></div><div class="sub" style="margin-top:8px">Source: ${esc(E.source||'')}, updated ${ago(E.generated)}.${E.status && E.status !== 'ok' ? ' ' + esc(E.status) : ''}</div></div>`;
+  h += `<div class="sec-title">Earnings on your watchlist<small>With how far each stock usually moves on the day</small></div><div class="card">${er.length ? er.map(r => `<div class="idea click" data-go="earn"><span><b>${esc(r.ticker)}</b><small style="display:block;color:var(--muted)">${dateS(r.next)} ${esc(r.next_when||'')}, in ${r.next_days} day${r.next_days===1?'':'s'}</small></span><span style="text-align:right"><span class="big">±${(r.typical*100).toFixed(1)}%</span><small style="display:block;color:var(--muted)">usual move</small></span></div>`).join('') : '<div class="empty">No watchlist stock reports in the next six weeks.</div>'}</div>`;
+  const cs = B && (B.sections||[]).find(s => s.key === 'calendar');
+  if (cs) h += `<div class="sec-title">Other companies reporting soon</div><div class="card brief">${cs.lines.map(l => `<div class="bl ${l.go?'click':''}" ${l.go?`data-go="${esc(l.go)}"`:''}><i class="${l.tone||''}"></i><span>${esc(l.t)}</span></div>`).join('')}</div>`;
+  $('#view').innerHTML = h; goWire($('#view'));
+  const list = () => { const rows = ev.filter(x => CAL.only === 'All' || x.impact === 'High'); let last = '';
+    $('#calList').innerHTML = rows.length ? rows.map(x => { const head = x.day !== last ? `<div style="font-weight:700;font-size:15px;color:var(--gold);padding:14px 0 2px">${esc(x.day)}${x.date === today ? ' · today' : ''}</div>` : ''; last = x.day;
+      return head + `<div class="idea click" data-ev><span><b>${esc(x.title)}</b><small style="display:block;color:var(--muted)">${esc(x.time||'')}${x.time ? ' · ' : ''}${esc(x.topic)}${x.forecast ? ' · expected ' + esc(x.forecast) : ''}${x.previous ? ' · last ' + esc(x.previous) : ''}</small><small class="why" style="display:none;color:var(--ink2);margin-top:6px;line-height:1.45">${esc(x.why || 'A scheduled release that can move interest rates and stocks.')}</small></span><span style="font-size:12.5px;font-weight:700;white-space:nowrap;color:${x.impact==='High'?'#FF7A59':'var(--muted)'}">${x.impact==='High'?'Big':'Medium'}</span></div>`; }).join('') : '<div class="empty">No big reports in the next 10 days. Switch to Everything for the smaller ones.</div>';
+    $('#calList').querySelectorAll('[data-ev]').forEach(e => e.onclick = () => { const w = e.querySelector('.why'); w.style.display = w.style.display === 'none' ? 'block' : 'none'; }); };
+  if (ev.length){ list(); segWire('calOnly', v => { CAL.only = v; list(); }); }
+}
+
+let INSO = null;
+async function viewInsiders(){
+  const D = await get('insiders.json');
+  if (!D || !(D.rows||[]).length){ $('#view').innerHTML = `<div class="empty">${esc((D && D.status) || 'Insider trades appear after the nightly data run.')}</div>`; return; }
+  let h = `<div class="lede"><div class="sub" style="margin-bottom:6px">Last 90 days, as of ${dateS(D.asof)}</div><h1>${esc(D.headline)}</h1><p>Insiders sold ${bigMoney(D.total_sold)} and bought ${bigMoney(D.total_bought)} across your watchlist. Selling is routine and says little. Buying with their own money is rare and worth a look. Tap a stock for the trades.</p></div><div class="card" id="insList"></div><div class="sub" style="margin:14px 2px">${esc(D.note)}</div>`;
+  $('#view').innerHTML = h;
+  const draw = () => { $('#insList').innerHTML = D.rows.map(r => `<div class="idea click" data-k="${esc(r.ticker)}"><span><b>${esc(r.ticker)}</b>${r.cluster ? ' <small style="color:var(--gold);font-weight:700">several buyers</small>' : ''}<small style="display:block;color:var(--muted);line-height:1.4">${r.buys ? r.buyers + ' bought ' + bigMoney(r.buy_value) + ', ' : 'No buys, '}${r.sells ? r.sellers + ' sold ' + bigMoney(r.sell_value) : 'no sells'}</small></span><span class="big ${r.buys ? 'up' : ''}" style="font-size:18px">${r.buys ? 'Buying' : r.sells ? 'Selling' : 'Quiet'}</span></div>` +
+      (INSO === r.ticker ? `<div class="lgx"><p>${esc(r.read)}</p><div class="tbl"><table><thead><tr><th>Date</th><th>Who</th><th class="n">Shares</th><th class="n">Value</th></tr></thead><tbody>${r.trades.map(t => `<tr><td class="mono">${dateS(t.date)}</td><td>${esc(t.name)}<small style="display:block" class="${t.buy?'up':'dn'}">${t.buy?'bought':'sold'} at ${px(t.price)}</small></td><td class="n">${t.shares.toLocaleString()}</td><td class="n">${bigMoney(t.value)}</td></tr>`).join('')}</tbody></table></div><button class="btn more" data-go="t/${esc(r.ticker)}">Open ${esc(r.ticker)}</button></div>` : '')).join('');
+    $('#insList').querySelectorAll('[data-k]').forEach(e => e.onclick = () => { INSO = INSO === e.dataset.k ? null : e.dataset.k; draw(); }); goWire($('#insList')); };
+  draw();
+}
+
+let ERO = null;
+async function viewEarn(){
+  const D = await get('earnings.json');
+  if (!D || !(D.rows||[]).length){ $('#view').innerHTML = `<div class="empty">${esc((D && D.status) || 'Earnings history appears after the nightly data run.')}</div>`; return; }
+  $('#view').innerHTML = `<div class="lede"><h1>${esc(D.headline)}</h1><p>How each of your stocks has moved the day after reporting, over its last several years of reports. Beating estimates does not guarantee a rise, and the usual move tells you how much risk you carry into the report. Tap a stock for every past reaction.</p></div><div class="card" id="erList"></div><div class="sub" style="margin:14px 2px">${esc(D.note)}</div>`;
+  const draw = () => { $('#erList').innerHTML = D.rows.map(r => `<div class="idea click" data-k="${esc(r.ticker)}"><span><b>${esc(r.ticker)}</b><small style="display:block;color:var(--muted);line-height:1.4">${r.next ? 'Next report ' + dateS(r.next) + ' (' + r.next_days + ' days)' : 'Next date not set'} · rose ${r.up} of ${r.n} times</small></span><span style="text-align:right"><span class="big">±${(r.typical*100).toFixed(1)}%</span><small style="display:block;color:var(--muted)">usual move</small></span></div>` +
+      (ERO === r.ticker ? `<div class="lgx"><p>${esc(r.read)} Best day ${sgn(r.best)}, worst ${sgn(r.worst)}.${r.after_beat != null ? ' Average after a beat: ' + sgn(r.after_beat) + '.' : ''}${r.after_miss != null ? ' Average after a miss: ' + sgn(r.after_miss) + '.' : ''}</p><div id="erC_${esc(r.ticker)}"></div><button class="btn more" data-go="t/${esc(r.ticker)}">Open ${esc(r.ticker)}</button></div>` : '')).join('');
+    $('#erList').querySelectorAll('[data-k]').forEach(e => e.onclick = () => { ERO = ERO === e.dataset.k ? null : e.dataset.k; draw(); }); goWire($('#erList')); ecClear();
+    const r = D.rows.find(x => x.ticker === ERO); if (!r) return; const H = r.history.slice().reverse();
+    ec('erC_' + r.ticker, {tooltip:{trigger:'axis', formatter: p => { const x = H[p[0].dataIndex]; return `<b>${x.date}</b><br>stock moved ${sgn(x.move)}<br>${x.beat == null ? 'no estimate' : x.beat ? 'beat estimates' : 'missed estimates'}${x.surprise != null ? ' by ' + Math.abs(x.surprise).toFixed(1) + '%' : ''}`; }},
+      xAxis:{type:'category', data:H.map(x => x.date.slice(2,7)), axisLine:{lineStyle:{color:C.line}}, axisLabel:{color:C.muted}}, yAxis:{type:'value', splitLine:{lineStyle:{color:'rgba(255,255,255,.06)'}}, axisLabel:{color:C.muted, formatter: v => v + '%'}},
+      series:[{type:'bar', data:H.map(x => ({value:+(x.move*100).toFixed(2), itemStyle:{color: x.move >= 0 ? C.up : C.dn, borderRadius:4}}))}]}, 220); };
+  draw();
+}
+
+function regimeHTML(G){
+  if (!G || !G.now) return '';
+  return `<div class="sec-title">What kind of market this is<small>${dateS(G.first)} to now. The row for today is highlighted.</small></div><div class="card"><p style="margin:0 0 12px;font-size:16px;line-height:1.5">${esc(G.text)} ${esc(G.note)}</p>${G.rows.map(r => `<div class="idea" style="${r.name===G.now?'background:rgba(198,244,50,.08);margin:0 -12px;padding:12px;border-radius:14px':''}"><span><b>${esc(r.name)}</b><small style="display:block;color:var(--muted);line-height:1.4">${esc(r.rule)} ${pct0(r.share)} of days. Did best over the next month: ${r.worked.slice(0,2).map(w => esc(w.name.toLowerCase()) + ' ' + sgn(w.month)).join(', ')}.</small></span><span style="text-align:right"><span class="big ${cls(r.d63.avg)}">${sgn(r.d63.avg)}</span><small style="display:block;color:var(--muted);white-space:nowrap">3 months later<br>up ${pct0(r.d63.up)}</small></span></div>`).join('')}<div class="sub" style="margin-top:10px">${esc(G.caveat)}</div></div>`;
 }
 
 async function viewSetup(){
@@ -1183,7 +1236,7 @@ async function route(){
   const h = decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'brief';
   if (h.startsWith('t/')){ navRender(h.slice(2).toUpperCase()); try { await viewTicker(h.slice(2).toUpperCase()); } catch(e){ $('#view').innerHTML = `<span class="back" onclick="history.back()">Back</span><div class="empty">Couldn't show this ticker: ${esc(e.message)}</div>`; } window.scrollTo(0,0); return; }
   navRender(h); ecClear();
-  const fn = {brief:viewBrief, fear:viewFear, spx:viewSpx, league:viewLeague, today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, mscan:viewMarketScan, live:viewLive, livenews:viewLiveNews, news:viewNews, wsb:viewWSB, filings:viewFilings, term:viewTerminal, lenses:viewLenses, edge:viewEdge, perf:viewPerf, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewBrief;
+  const fn = {calendar:viewCalendar, insiders:viewInsiders, earn:viewEarn, brief:viewBrief, fear:viewFear, spx:viewSpx, league:viewLeague, today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, mscan:viewMarketScan, live:viewLive, livenews:viewLiveNews, news:viewNews, wsb:viewWSB, filings:viewFilings, term:viewTerminal, lenses:viewLenses, edge:viewEdge, perf:viewPerf, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewBrief;
   try { await fn(); } catch(e){ $('#view').innerHTML = `<div class="empty">Couldn't render this view: ${esc(e.message)}</div>`; }
 }
 let GATED = false;
