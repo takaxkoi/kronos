@@ -251,7 +251,7 @@ const MENU = [
   ['Markets', [['brief','Daily brief'],['today','Today'],['spx','S&P 500'],['fear','Fear and greed'],['calendar','Calendar'],['live','Live prices'],['market','Market map'],['scanner','S&P 500 scan'],['mscan','Market scan'],['other','Crypto, FX, gold']]],
   ['Stocks', [['term','Terminal'],['watch','Watchlist'],['earn','Earnings moves'],['insiders','Insider trades'],['research','AI research'],['lenses','Lenses']]],
   ['News and crowd', [['livenews','Live news'],['news','News mood'],['wsb','WallStreetBets']]],
-  ['Labs', [['edge','Edge Lab'],['filings','Filings Lab'],['perf','Performance'],['report','Report card'],['backtest','Backtest Lab']]],
+  ['Labs', [['factor','Strategy test'],['edge','Edge Lab'],['filings','Filings Lab'],['perf','Performance'],['report','Report card'],['backtest','Backtest Lab']]],
   ['Account', [['league','Strategy league'],['paper','Paper trading'],['journal','Journal'],['setup','Setup']]],
 ];
 const TABS = MENU.flatMap(g => g[1]);
@@ -835,6 +835,41 @@ async function viewEdge(){
     series:[{type:'bar', name:'Rule', data:W.map(w => w.rule), itemStyle:{color:C.gold2, borderRadius:[3,3,0,0]}}, {type:'bar', name:'Buy and hold', data:W.map(w => w.buy_hold), itemStyle:{color:C.blue, borderRadius:[3,3,0,0]}}]}, 300);
 }
 
+async function viewFactor(){
+  const F = await get('factorlab.json');
+  if (!F){ $('#view').innerHTML = '<div class="empty">The strategy test runs each weeknight with the Edge Lab. Run Actions → “Edge Lab + performance” to fill this now.</div>'; return; }
+  const R = F.rules || [], pt = x => x == null || isNaN(x) ? '—' : (x > 0 ? '+' : '') + (x*100).toFixed(2);
+  const best = R.slice().sort((a,b) => b.excess - a.excess)[0] || {};
+  const calm = R.find(r => r.key === 'lowb') || {};
+  let h = `<div class="warnbox" style="margin-bottom:14px"><b>Verdict.</b> ${esc(F.verdict)}</div>
+    <div class="sub" style="margin-bottom:10px">Each month-end, every rule buys its top ${F.top} stocks worth over $10B, using only what was known that day, and holds them one month. It is scored against the average of all those stocks. ${F.months} months, ${esc(F.start)} to ${esc(F.end)}, ${F.stocks} stocks, ${F.fee_bps} bps cost per side. Updated ${ago(F.generated)}.</div>
+    <div class="grid g3"><div class="card"><h3>Average stock, per year</h3><div class="hero ${cls(F.base_cagr)}">${pct(F.base_cagr,1)}</div><div class="sub">S&P 500 ${pct(F.spy_cagr,1)} a year</div></div>
+    <div class="card"><h3>Best rule vs average stock</h3><div class="hero ${cls(best.excess)}">${pt(best.excess)} pts</div><div class="sub">${esc(best.name||'')} · per month · beat it in ${best.beat}/${best.months} months</div></div>
+    <div class="card"><h3>Market now</h3><div class="hero ${F.regime_weak_now?'dn':'up'}" style="font-size:30px">${F.regime_weak_now?'Weak':'Healthy'}</div><div class="sub">${F.regime_weak_now?'S&P 500 below its 200-day average or down last month. The regime switch holds low beta.':'S&P 500 above its 200-day average and up last month. The regime switch holds quality momentum.'}</div></div></div>
+    <div class="sec-title">Every rule <small>points per month vs the average stock</small></div><div class="card"><div class="tbl"><table><thead><tr><th>Rule</th><th class="n">Avg month</th><th class="n">vs average</th><th class="n">t-stat</th><th class="n">Months beat</th><th class="n">Down months</th><th class="n">Up months</th><th class="n">Per year</th><th class="n">Worst drop</th></tr></thead><tbody>
+    ${R.map(r=>`<tr><td style="min-width:200px;max-width:300px;white-space:normal"><b>${esc(r.name)}</b> ${(r.t||0)>=2&&!r.biased?'<span class="chip g">beat it</span>':''}${r.biased?'<span class="chip y">likely flattered</span>':''}<div class="sub" style="font-size:11.5px;white-space:normal">${esc(r.rule)}</div></td><td class="n ${cls(r.avg)}">${pct(r.avg,2)}</td><td class="n ${cls(r.excess)}">${pt(r.excess)}</td><td class="n">${r.t==null?'—':r.t.toFixed(1)}</td><td class="n">${r.beat}/${r.months}</td><td class="n ${cls(r.down_excess)}">${pt(r.down_excess)} <span class="sub">(${r.down_beat}/${r.down_months})</span></td><td class="n ${cls(r.up_excess)}">${pt(r.up_excess)}</td><td class="n ${cls(r.cagr)}">${pct(r.cagr,1)}</td><td class="n dn">${pct(r.dd,0)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="sub" style="margin-top:8px">A t-stat of 2 or more means the lead is unlikely to be luck. Down months are months when the average stock fell.</div></div>
+    <div class="sec-title">Growth of $1 vs the average stock <small>above 1 = ahead of the average stock</small></div><div class="card"><div id="ecFactor"></div></div>
+    <div class="sec-title">How much testing on today's S&P 500 flatters <small>same ${(F.bias_check||[])[0]?.months||0} months, points per month vs the average stock</small></div><div class="card"><div class="tbl"><table><thead><tr><th>Rule</th><th class="n">This test</th><th class="n">Tickerbot (all stocks over $10B)</th><th class="n">Gap</th></tr></thead><tbody>
+    ${(F.bias_check||[]).map(b=>`<tr><td><b>${esc(b.name)}</b></td><td class="n ${cls(b.here)}">${(b.here>0?'+':'')+b.here.toFixed(2)}</td><td class="n ${cls(b.tickerbot)}">${(b.tickerbot>0?'+':'')+b.tickerbot.toFixed(2)}</td><td class="n">${(b.here-b.tickerbot>0?'+':'')+(b.here-b.tickerbot).toFixed(2)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="sub" style="margin-top:8px">The Tickerbot test (Nov 2026) included companies that are not in the S&P 500 today. A big gap means the rule's result here leans on stocks that joined the index after rising.</div></div>
+    <div class="sec-title">Today's picks <small>as of ${esc(F.asof)} · research list, not advice</small></div>
+    <div class="seg" id="facSeg" style="flex-wrap:wrap;margin-bottom:10px">${R.map((r,i)=>`<button data-k="${r.key}" class="${i?'':'on'}">${esc(r.name)}</button>`).join('')}</div><div class="card"><div id="facPicks"></div></div>
+    <div class="sec-title">Limits</div><div class="card"><ul class="sub" style="margin:0;padding-left:18px">${(F.caveats||[]).map(c=>`<li style="margin:4px 0">${esc(c)}</li>`).join('')}</ul></div>`;
+  $('#view').innerHTML = h;
+  const M = F.monthly || {}, D = M.dates || [];
+  const grow = k => { let v = 1; return (M[k]||[]).map((x,i) => { const b = M.base[i]; if (x != null && b != null) v *= (1 + x) / (1 + b); return +v.toFixed(4); }); };
+  const cols = [C.gold2, C.blue, '#FFB547', '#B98CFF', '#4FD1C5', C.dn];
+  ec('ecFactor', {legend:{textStyle:{color:C.ink2}, top:0, type:'scroll'}, grid:{left:8, right:16, top:40, bottom:8, containLabel:true}, tooltip:{trigger:'axis', valueFormatter:v => v == null ? '—' : v.toFixed(2)},
+    xAxis: axC(D), yAxis: Object.assign(axV(v => v.toFixed(1)), {scale:true}),
+    series: R.map((r,i) => ({type:'line', name:r.name, data:grow(r.key), showSymbol:false, lineStyle:{color:cols[i%cols.length], width:2}, itemStyle:{color:cols[i%cols.length]},
+      markLine: i ? undefined : {symbol:'none', lineStyle:{color:C.muted, type:'dashed'}, label:{show:false}, data:[{yAxis:1}]}}))}, 340);
+  const show = k => { const L = (F.today||{})[k] || [];
+    $('#facPicks').innerHTML = L.length ? `<div class="tbl"><table><thead><tr><th>Ticker</th><th class="n">6 months</th><th class="n">Beta</th><th class="n">Return on equity</th><th class="n">Operating margin</th><th class="n">P/E (approx.)</th></tr></thead><tbody>${L.map(x=>`<tr><td><b>${esc(x.ticker)}</b></td><td class="n ${cls(x.ret6)}">${pct(x.ret6,0)}</td><td class="n">${x.beta==null?'—':x.beta.toFixed(2)}</td><td class="n">${pct0(x.roe)}</td><td class="n">${pct0(x.opm)}</td><td class="n">${x.pe==null?'—':x.pe.toFixed(1)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="sub">No stock passes this rule today.</div>'; };
+  $('#facSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; $('#facSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); show(b.dataset.k); };
+  show((R[0]||{}).key);
+}
+
 async function viewPerf(){
   const P = await get('perf.json');
   if (!P || !(P.streams||[]).length){ $('#view').innerHTML = '<div class="empty">The performance report needs graded calls. It fills in after the daily scan has run for a week or more.</div>'; return; }
@@ -1236,7 +1271,7 @@ async function route(){
   const h = decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'brief';
   if (h.startsWith('t/')){ navRender(h.slice(2).toUpperCase()); try { await viewTicker(h.slice(2).toUpperCase()); } catch(e){ $('#view').innerHTML = `<span class="back" onclick="history.back()">Back</span><div class="empty">Couldn't show this ticker: ${esc(e.message)}</div>`; } window.scrollTo(0,0); return; }
   navRender(h); ecClear();
-  const fn = {calendar:viewCalendar, insiders:viewInsiders, earn:viewEarn, brief:viewBrief, fear:viewFear, spx:viewSpx, league:viewLeague, today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, mscan:viewMarketScan, live:viewLive, livenews:viewLiveNews, news:viewNews, wsb:viewWSB, filings:viewFilings, term:viewTerminal, lenses:viewLenses, edge:viewEdge, perf:viewPerf, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewBrief;
+  const fn = {calendar:viewCalendar, insiders:viewInsiders, earn:viewEarn, brief:viewBrief, fear:viewFear, spx:viewSpx, league:viewLeague, today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, mscan:viewMarketScan, live:viewLive, livenews:viewLiveNews, news:viewNews, wsb:viewWSB, filings:viewFilings, term:viewTerminal, lenses:viewLenses, edge:viewEdge, factor:viewFactor, perf:viewPerf, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewBrief;
   try { await fn(); } catch(e){ $('#view').innerHTML = `<div class="empty">Couldn't render this view: ${esc(e.message)}</div>`; }
 }
 let GATED = false;

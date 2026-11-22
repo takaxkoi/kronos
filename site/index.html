@@ -4,190 +4,420 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kronos Oracle</title>
-<meta name="description" content="Private AI market forecasting: thirty simulated futures per stock, trade plans, and a report card that grades every call.">
-<meta name="theme-color" content="#141414">
+<meta name="description" content="A private market desk that reads prices, news, filings and the crowd every day, tells you what matters in plain words, and grades its own calls.">
+<meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0A0A0C;--panel:#1E1E1E;--line:#25252B;--ink:#EEE9DC;--ink2:#B3AC9C;--muted:#7A7466;--gold:#C6F432;--gold2:#DCBE6E;--up:#C6F432;--dn:#FF7A59;
-  --serif:'Space Grotesk',system-ui,sans-serif;--mono:'Space Grotesk',system-ui,sans-serif;color-scheme:dark}
+:root{--bg:#000;--panel:#111113;--panel2:#1C1C1E;--line:#2A2A2D;--ink:#F5F5F7;--ink2:#A1A1A6;--muted:#6E6E73;--lime:#C6F432;--coral:#FF7A59;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",system-ui,"Segoe UI",Roboto,sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 'Space Grotesk',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.5 var(--font);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
-.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
-nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
-.logo{display:flex;align-items:center;gap:10px;font:600 15px var(--serif);letter-spacing:.14em}
-.logo b{color:var(--gold)}
-.nav-links{display:flex;gap:26px;align-items:center;font-size:14px;color:var(--ink2)}
-.nav-links a:hover{color:var(--ink)}
-@media(max-width:700px){.nav-links .hide-m{display:none}}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;padding:12px 22px;font:600 14px Inter;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--ink);transition:transform .15s,border-color .15s,background .15s}
-.btn:hover{border-color:var(--gold);transform:translateY(-1px)}
-.btn.gold{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#15120A;border-color:transparent}
-.btn.sm{padding:8px 16px;font-size:13px}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--lime);outline-offset:3px;border-radius:8px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+.up{color:var(--lime)}.dn{color:var(--coral)}
+
+/* nav: sticky, never fixed */
+.nav{position:sticky;top:0;z-index:20;background:rgba(0,0,0,.72);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(255,255,255,.08);padding-top:env(safe-area-inset-top,0px)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:52px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:17px;letter-spacing:-.01em}
+.brand i{width:10px;height:10px;border-radius:50%;background:var(--lime);display:block}
+.links{display:flex;align-items:center;gap:26px;font-size:13px;color:var(--ink2)}
+.links a:hover{color:var(--ink)}
+.links .m{display:none}
+@media(min-width:760px){.links .m{display:inline}}
+.pill{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 22px;border-radius:999px;border:0;background:var(--lime);color:#0B0B0B;font-weight:600;font-size:16px;cursor:pointer;transition:transform .15s ease,filter .15s ease}
+.pill:hover{filter:brightness(1.08)}.pill:active{transform:scale(.97)}
+.pill.sm{min-height:32px;padding:0 14px;font-size:13px}
+.pill.ghost{background:transparent;color:var(--lime);padding:0 6px}
+.pill.ghost:hover{text-decoration:underline;filter:none}
+
+/* type */
+h1{font-size:clamp(44px,10.5vw,92px);line-height:1.03;letter-spacing:-.04em;font-weight:700;margin:0;text-wrap:balance}
+h2{font-size:clamp(34px,7vw,64px);line-height:1.05;letter-spacing:-.035em;font-weight:700;margin:0;text-wrap:balance}
+h3{font-size:21px;line-height:1.2;letter-spacing:-.015em;font-weight:600;margin:0}
+.lead{font-size:clamp(19px,2.6vw,24px);line-height:1.4;color:var(--ink2);margin:18px 0 0;max-width:34em;letter-spacing:-.01em}
+.note{font-size:13px;color:var(--muted);line-height:1.45}
+
 /* hero */
-.hero > *{position:relative;z-index:1}.hero > .glow{position:absolute;z-index:0}
-.hero{position:relative;overflow:hidden;padding:70px 0 40px;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
-@media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:30px}}
-.eyebrow{font:500 12px var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--gold2)}
-h1{font:400 clamp(44px,7vw,84px)/1.02 var(--serif);letter-spacing:-.02em;margin:18px 0 22px}
-h1 em{font-style:italic;color:var(--gold2)}
-.lede{font-size:18px;color:var(--ink2);max-width:540px}
-.cta{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap}
-.glow{position:absolute;top:-200px;right:-200px;width:700px;height:700px;background:radial-gradient(closest-side,rgba(198,244,50,.16),transparent);pointer-events:none;z-index:0}
-.fan{width:100%;height:auto;display:block}
-.fan-cap{font:500 11px var(--mono);color:var(--muted);letter-spacing:.08em;margin-top:8px;text-align:right}
-/* sections */
-section{padding:80px 0;border-top:1px solid var(--line)}
-h2{font:400 clamp(32px,4.4vw,52px)/1.08 var(--serif);letter-spacing:-.015em;margin:12px 0 18px}
-h2 em{font-style:italic;color:var(--gold2)}
-.sub{color:var(--ink2);max-width:620px}
-.grid{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:44px}
-@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){.grid{grid-template-columns:1fr}}
-.feat{background:linear-gradient(180deg,#1E1E1E,var(--panel));border:1px solid var(--line);border-radius:18px;padding:24px;min-height:190px}
-.feat .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:rgba(198,244,50,.1);border:1px solid rgba(198,244,50,.3);margin-bottom:16px}
-.feat h3{font:600 17px Inter;margin:0 0 8px}
-.feat p{margin:0;color:var(--ink2);font-size:14.5px}
-.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-top:44px;counter-reset:s}
-@media(max-width:900px){.steps{grid-template-columns:1fr 1fr;gap:24px 0}}
-@media(max-width:520px){.steps{grid-template-columns:1fr}}
-.step{padding:0 22px 0 0;position:relative}
-.step:before{counter-increment:s;content:"0" counter(s);font:500 12px var(--mono);color:var(--gold2);letter-spacing:.14em;display:block;margin-bottom:14px}
-.step:after{content:"";position:absolute;top:7px;left:34px;right:16px;height:1px;background:linear-gradient(90deg,rgba(198,244,50,.5),transparent)}
-.step h4{font:600 16px Inter;margin:0 0 6px}
-.step p{margin:0;color:var(--ink2);font-size:14px}
-.honest{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
-@media(max-width:900px){.honest{grid-template-columns:1fr}}
-.quote{font:400 italic clamp(24px,3vw,34px)/1.3 var(--serif);color:var(--ink);border-left:2px solid var(--gold);padding-left:24px}
-.ticks{list-style:none;padding:0;margin:0}
-.ticks li{padding:14px 0;border-bottom:1px solid var(--line);display:flex;gap:12px;color:var(--ink2)}
-.ticks li b{color:var(--ink);font-weight:600}
-.ticks li:before{content:"◆";color:var(--gold);font-size:11px;padding-top:5px}
+.hero{text-align:center;padding-top:72px}
+.hero .lead{margin-left:auto;margin-right:auto}
+.cta{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:28px}
+.phone{width:min(330px,82vw);margin:56px auto 0;border-radius:54px;padding:11px;background:linear-gradient(160deg,#3a3a3c,#1c1c1e 40%,#0e0e0f);box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 60px 120px -30px rgba(198,244,50,.18),0 40px 80px -20px rgba(0,0,0,.9);animation:rise .9s cubic-bezier(.2,.7,.2,1) both}
+.screen{border-radius:44px;background:#141414;height:min(640px,150vw);overflow:hidden;position:relative;display:flex;flex-direction:column;text-align:left}
+.island{width:96px;height:28px;border-radius:20px;background:#000;margin:10px auto 6px;flex:none}
+.scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 18px 26px;flex:1;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.scroll .day{font-size:12.5px;color:var(--ink2)}
+.scroll .hd{font-size:25px;line-height:1.1;letter-spacing:-.03em;font-weight:700;margin:6px 0 8px}
+.scroll .sm{font-size:13.5px;line-height:1.45;color:var(--ink2);margin:0 0 12px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.tile{background:#1E1E1E;border-radius:18px;padding:12px}
+.tile small{display:block;font-size:11.5px;color:var(--ink2)}
+.tile b{display:block;font-size:28px;letter-spacing:-.04em;line-height:1.1;margin-top:2px}
+.tile span{font-size:11.5px;color:var(--ink2)}
+.sec{font-size:17px;font-weight:700;letter-spacing:-.02em;margin:16px 0 8px}
+.box{background:#1E1E1E;border-radius:18px;padding:4px 14px}
+.ln{display:flex;gap:10px;padding:10px 0;border-top:1px solid #2E2E2E;font-size:13.5px;line-height:1.4}
+.ln:first-child{border-top:0}
+.ln i{flex:0 0 7px;height:7px;border-radius:50%;background:#555;margin-top:6px}
+.ln i.up{background:var(--lime)}.ln i.dn{background:var(--coral)}
+.fade{position:absolute;left:0;right:0;bottom:0;height:54px;background:linear-gradient(transparent,#141414);pointer-events:none;border-radius:0 0 44px 44px}
+.hint{margin-top:16px}
+@keyframes rise{from{opacity:0;transform:translateY(40px) scale(.97)}to{opacity:1;transform:none}}
+
+/* today strip */
+.today{padding-top:96px}
+.three{display:grid;gap:12px;margin-top:28px}
+@media(min-width:760px){.three{grid-template-columns:repeat(3,1fr)}}
+.stat{background:var(--panel);border-radius:28px;padding:26px}
+.stat small{display:block;font-size:15px;color:var(--ink2)}
+.stat b{display:block;font-size:clamp(48px,9vw,72px);letter-spacing:-.05em;line-height:1.02;margin:8px 0 6px;font-weight:700}
+.stat b.word{font-size:clamp(34px,6vw,44px);letter-spacing:-.035em;line-height:1.08}
+.stat span{font-size:15px;color:var(--ink2);line-height:1.4;display:block}
+
+/* chapters */
+.chapter{padding-top:120px}
+.split{display:grid;gap:36px;align-items:center}
+@media(min-width:920px){.split{grid-template-columns:5fr 6fr;gap:64px}.split.flip>.txt{order:2}}
+.panel{background:var(--panel);border-radius:32px;padding:22px;min-width:0}
+.read{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:10px;min-height:74px}
+.read .big{font-size:52px;letter-spacing:-.05em;font-weight:700;line-height:1}
+.read .lbl{font-size:14px;color:var(--ink2);line-height:1.35}
+.read .r{text-align:right}
+canvas{display:block;width:100%;height:240px;touch-action:pan-y;cursor:crosshair}
+.seg{display:inline-flex;background:var(--panel2);border-radius:999px;padding:3px;gap:2px;margin-top:14px;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{border:0;background:transparent;color:var(--ink2);min-height:36px;padding:0 15px;border-radius:999px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--ink);color:#000}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--ink);min-height:44px;padding:0 16px;border-radius:999px;font-size:15px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.chip.on{background:var(--lime);border-color:var(--lime);color:#0B0B0B}
+.chip em{font-style:normal;font-weight:400;opacity:.7;margin-left:6px}
+.out{margin-top:22px}
+.out .num{font-size:clamp(64px,14vw,112px);letter-spacing:-.06em;font-weight:700;line-height:1}
+.out p{margin:10px 0 0;color:var(--ink2);font-size:17px;line-height:1.45}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.kv div{background:var(--panel2);border-radius:18px;padding:14px}
+.kv.two{grid-template-columns:1fr 1fr}.kv b+small{margin-top:4px}
+@media(max-width:699px){#lChips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -22px;padding:0 22px}#lChips::-webkit-scrollbar{display:none}#lChips .chip{flex:none}}
+.kv small{display:block;font-size:12.5px;color:var(--ink2);line-height:1.3}
+.kv b{display:block;font-size:24px;letter-spacing:-.03em;margin-top:4px}
+.rule{margin-top:14px;font-size:15px;line-height:1.5;color:var(--ink2)}
+
+/* honest */
+.honest{text-align:center}
+.vs{display:grid;gap:12px;margin:36px auto 0;max-width:820px}
+@media(min-width:700px){.vs{grid-template-columns:1fr 1fr}}
+.vs .stat{text-align:left}
+.honest .lead{margin-left:auto;margin-right:auto}
+
+/* bento */
+.bento{display:grid;gap:12px;margin-top:36px}
+@media(min-width:700px){.bento{grid-template-columns:repeat(6,1fr)}.b2{grid-column:span 2}.b3{grid-column:span 3}.b4{grid-column:span 4}}
+.cell{background:var(--panel);border-radius:28px;padding:26px;min-height:170px;display:flex;flex-direction:column;justify-content:space-between;gap:18px;transition:background .2s ease}
+.cell:hover{background:#17171a}
+.cell p{margin:8px 0 0;color:var(--ink2);font-size:15.5px;line-height:1.45}
+.cell .live{font-size:15px;line-height:1.4;color:var(--ink);border-top:1px solid var(--line);padding-top:14px}
+.cell .live:empty{display:none}
+
 /* sign in */
-.signin{display:grid;grid-template-columns:1fr 440px;gap:40px;align-items:center}
-@media(max-width:900px){.signin{grid-template-columns:1fr}}
-.card{background:linear-gradient(180deg,#17171B,var(--panel));border:1px solid var(--line);border-radius:22px;padding:30px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
-.card h3{font:400 28px var(--serif);margin:0 0 4px}
-label{display:block;font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
-input{width:100%;background:#0C0C0F;border:1px solid var(--line);border-radius:12px;padding:13px 14px;color:var(--ink);font:15px Inter}
-input:focus{outline:none;border-color:var(--gold)}
-.card .btn{width:100%;margin-top:22px;padding:14px}
-.msg{min-height:22px;margin-top:14px;font-size:13.5px;color:var(--ink2)}
-.msg.err{color:#F08C8F}.msg.ok{color:#5CC9B4}
-.link{background:none;border:0;color:var(--gold2);font:500 13px Inter;cursor:pointer;padding:0;margin-top:14px}
-.badge{display:inline-block;font:500 11px var(--mono);letter-spacing:.14em;color:var(--gold2);border:1px solid rgba(198,244,50,.4);border-radius:999px;padding:5px 12px;margin-bottom:16px}
-footer{border-top:1px solid var(--line);padding:34px 0 50px;color:var(--muted);font-size:12.5px}
-footer .row{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
-.reveal{opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s ease}
-.reveal.in{opacity:1;transform:none}
-@media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
-body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.signin{padding-top:120px;padding-bottom:96px}
+.sgrid{display:grid;gap:32px;align-items:center}
+@media(min-width:860px){.sgrid{grid-template-columns:1fr 420px;gap:64px}}
+form{background:var(--panel);border-radius:32px;padding:28px}
+label{display:block;font-size:14px;color:var(--ink2);margin:16px 0 6px}
+input{width:100%;min-height:50px;border-radius:14px;border:1px solid var(--line);background:#000;color:var(--ink);font:400 17px var(--font);padding:0 14px}
+input:focus{outline:none;border-color:var(--lime)}
+form .pill{width:100%;margin-top:22px;min-height:50px}
+.link{background:none;border:0;color:var(--ink2);font-size:14px;margin-top:14px;cursor:pointer;padding:6px 0}
+.link:hover{color:var(--ink)}
+.msg{font-size:14px;margin-top:10px;min-height:20px;color:var(--ink2)}
+.msg.err{color:var(--coral)}.msg.ok{color:var(--lime)}
+footer{border-top:1px solid var(--line);padding:26px 0 calc(26px + env(safe-area-inset-bottom,0px));color:var(--muted);font-size:12.5px;line-height:1.5}
+footer .wrap{display:flex;gap:10px 28px;flex-wrap:wrap;justify-content:space-between}
+.skel{color:var(--muted)}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.phone{animation:none}.pill,.chip,.cell{transition:none}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <nav>
-    <a class="logo" href="#"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#1E1E1E" stroke="#444444"/><path d="M14 44 L26 30 L34 37 L50 18" stroke="#C6F432" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="18" r="4" fill="#DCBE6E"/></svg>KRONOS <b>ORACLE</b></a>
-    <div class="nav-links"><a class="hide-m" href="#how">How it works</a><a class="hide-m" href="#honest">Report card</a><a class="btn sm" id="navBtn" href="#signin">Sign in</a></div>
-  </nav>
+<div class="nav"><div class="wrap">
+  <a class="brand" href="#top"><i></i>Kronos Oracle</a>
+  <div class="links"><a class="m" href="#mood">Mood</a><a class="m" href="#spx">S&amp;P 500</a><a class="m" href="#league">Strategies</a><a class="m" href="#score">Scorecard</a><a class="pill sm" href="#signin" id="navBtn">Sign in</a></div>
+</div></div>
 
-  <header class="hero">
-    <div class="glow" aria-hidden="true"></div>
-    <div>
-      <div class="eyebrow">Private AI market desk</div>
-      <h1>Thirty futures.<br>One <em>honest</em> answer.</h1>
-      <p class="lede">Kronos Oracle runs a foundation model trained on market candles across every stock you follow, simulates thirty possible weeks ahead, and turns the agreement into scores, ranges and trade plans. Then it grades every call against what really happened.</p>
-      <div class="cta"><a class="btn gold" href="#signin" id="heroBtn">Sign in</a><a class="btn" href="#how">See how it works</a></div>
-    </div>
-    <div>
-      <svg class="fan" id="fan" viewBox="0 0 560 400" role="img" aria-label="Illustration: price history splitting into many possible future paths"></svg>
-      <div class="fan-cap">ILLUSTRATION · ONE HISTORY, MANY POSSIBLE FUTURES</div>
-    </div>
-  </header>
+<main id="top">
+<header class="hero wrap">
+  <h1>Know the market before it opens.</h1>
+  <p class="lead">Kronos Oracle reads prices, news, filings and the crowd every day, then tells you what matters in plain words. And it keeps score on itself.</p>
+  <div class="cta"><a class="pill" href="#signin" id="heroBtn">Sign in</a><a class="pill ghost" href="#today">See today's read</a></div>
+  <div class="phone" aria-label="Today's daily brief, live from the app">
+    <div class="screen"><div class="island"></div><div class="scroll" id="brief"><p class="sm skel">Loading today's brief…</p></div><div class="fade"></div></div>
+  </div>
+  <p class="note hint">This is today's real brief. Scroll inside the phone.</p>
+</header>
 
-  <section id="features" class="reveal">
-    <div class="eyebrow">Inside the desk</div>
-    <h2>Everything a call needs, <em>nothing it doesn't.</em></h2>
-    <p class="sub">Built around one question: is the model actually right? Every number on the dashboard traces back to simulated futures, real prices and a graded track record.</p>
-    <div class="grid">
-      <div class="feat"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DCBE6E" stroke-width="2"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div><h3>Agreement meter</h3><p>How many of thirty simulated futures land in the same direction, rolled into a 0–100 Kronos Score.</p></div>
-      <div class="feat"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DCBE6E" stroke-width="2"><path d="M4 18h16M7 14l3-3 3 2 5-6"/></svg></div><h3>Trade plans</h3><p>Entry zone, stop, target, position size and hold time, shown only when the reward is at least twice the risk.</p></div>
-      <div class="feat"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DCBE6E" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg></div><h3>Report card</h3><p>Every prediction is logged and graded: hit rate, calibration, streaks and accuracy by sector, timeframe and market mood.</p></div>
-      <div class="feat"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DCBE6E" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div><h3>Data vault</h3><p>A daily snapshot of fundamentals, short interest, analyst moves, insider trades and options positioning across the S&amp;P 500.</p></div>
-      <div class="feat"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DCBE6E" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></div><h3>Telegram desk</h3><p>Pre-market briefing, after-close recap, high-confidence alerts and price-hit pings, plus forecasts on demand.</p></div>
-      <div class="feat"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DCBE6E" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/></svg></div><h3>Backtest lab</h3><p>Walk-forward replays against buy-and-hold and simple rules. Ideas that can't beat a coin flip don't get promoted.</p></div>
-    </div>
-  </section>
+<section class="today wrap" id="today">
+  <h2>Today, in three numbers.</h2>
+  <p class="lead" id="todayNote">Straight from the app, updated after every market close.</p>
+  <div class="three">
+    <div class="stat"><small>Fear and greed</small><b id="tMood" class="skel">—</b><span id="tMoodS">0 is maximum fear, 100 is maximum greed</span></div>
+    <div class="stat"><small>S&amp;P 500, last session</small><b id="tSpx" class="skel">—</b><span id="tSpxS">&nbsp;</span></div>
+    <div class="stat"><small>The kind of market this is</small><b id="tReg" class="word skel">—</b><span id="tRegS">&nbsp;</span></div>
+  </div>
+</section>
 
-  <section id="how" class="reveal">
-    <div class="eyebrow">How it works</div>
-    <h2>From candles to a <em>graded</em> call.</h2>
-    <div class="steps">
-      <div class="step"><h4>Capture</h4><p>After every close, prices and point-in-time market data are saved to the vault.</p></div>
-      <div class="step"><h4>Simulate</h4><p>Kronos reads recent candles and samples thirty possible paths for each stock.</p></div>
-      <div class="step"><h4>Decide</h4><p>Agreement, ranges, signals and trade plans are built from those paths.</p></div>
-      <div class="step"><h4>Grade</h4><p>When each forecast window closes, the call is scored against reality.</p></div>
+<section class="chapter wrap" id="mood">
+  <div class="split">
+    <div class="txt">
+      <h2>One number for how scared investors are.</h2>
+      <p class="lead">Six gauges built from real prices, rolled into a score from 0 to 100. Drag across the chart to see the mood on any day of the past year, next to where the S&amp;P 500 stood.</p>
     </div>
-  </section>
-
-  <section id="honest" class="reveal">
-    <div class="honest">
-      <p class="quote">The point isn't to sound confident. It's to know, with numbers, when the model has earned your trust and when it hasn't.</p>
-      <ul class="ticks">
-        <li><span><b>Every call is recorded</b> before the outcome is known.</span></li>
-        <li><span><b>Calibration is checked:</b> 80% sure should mean right about 80% of the time.</span></li>
-        <li><span><b>Paper money first.</b> Real-money automation stays locked until the report card passes.</span></li>
-        <li><span><b>Forecasts, not promises.</b> Not financial advice.</span></li>
-      </ul>
+    <div class="panel">
+      <div class="read"><div><div class="big" id="mScore">—</div><div class="lbl" id="mZone">&nbsp;</div></div><div class="r"><div class="lbl" id="mDate">&nbsp;</div><div class="lbl" id="mSpy">&nbsp;</div></div></div>
+      <canvas id="mChart" aria-label="Fear and greed score against the S&P 500"></canvas>
+      <div class="seg" id="mSeg"><button data-v="66">3 months</button><button data-v="130" class="on">6 months</button><button data-v="260">1 year</button></div>
+      <p class="note" style="margin:12px 0 0">Green line: fear and greed. White line: S&amp;P 500 fund (SPY).</p>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="signin" class="reveal">
-    <div class="signin">
-      <div>
-        <span class="badge">INVITATION ONLY</span>
-        <h2>Welcome back to <em>the desk.</em></h2>
-        <p class="sub">Access is limited to approved members. Sign in with your username (or email) and password.</p>
+<section class="chapter wrap" id="next">
+  <div class="split flip">
+    <div class="txt">
+      <h2>What happened after days like today.</h2>
+      <p class="lead">Every score is tested against what the S&amp;P 500 did next. Pick a mood and a time span.</p>
+    </div>
+    <div class="panel">
+      <div class="chips" id="nZones"></div>
+      <div class="seg" id="nSeg"><button data-v="d5">1 week later</button><button data-v="d21" class="on">1 month later</button><button data-v="d63">3 months later</button></div>
+      <div class="out"><div class="num" id="nNum">—</div><p id="nText">&nbsp;</p></div>
+      <p class="note" id="nVerdict" style="margin:16px 0 0"></p>
+    </div>
+  </div>
+</section>
+
+<section class="chapter wrap" id="spx">
+  <div class="split">
+    <div class="txt">
+      <h2>The S&amp;P 500, taken apart.</h2>
+      <p class="lead" id="sLead">Where it stands against its highs and averages, how many stocks are taking part, and how past drops of this size played out.</p>
+    </div>
+    <div class="panel">
+      <div class="read"><div><div class="big" id="sPx">—</div><div class="lbl" id="sChg">&nbsp;</div></div><div class="r"><div class="lbl" id="sDate">&nbsp;</div></div></div>
+      <canvas id="sChart" aria-label="S&P 500 fund price"></canvas>
+      <div class="seg" id="sSeg"><button data-v="22">1M</button><button data-v="66">3M</button><button data-v="130" class="on">6M</button><button data-v="252">1Y</button><button data-v="750">3Y</button></div>
+      <div class="kv"><div><small>From its record high</small><b id="sHigh">—</b></div><div><small>Against its 200-day average</small><b id="s200">—</b></div><div><small>Stocks above their 50-day average</small><b id="s50">—</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="chapter wrap" id="league">
+  <div class="split flip">
+    <div class="txt">
+      <h2>Seven strategies. Real rules. Practice money.</h2>
+      <p class="lead" id="lLead">Published strategies tested on ten years of prices, each now running its own $100,000 practice account. Pick one to see it against simply holding the S&amp;P 500.</p>
+    </div>
+    <div class="panel">
+      <div class="chips" id="lChips"><span class="note">Loading strategies…</span></div>
+      <canvas id="lChart" style="margin-top:16px" aria-label="Growth of one dollar"></canvas>
+      <div class="kv two"><div><small>Gain a year</small><b id="lGain">—</b><small id="lBaseG">&nbsp;</small></div><div><small>Worst drop</small><b id="lDrop">—</b><small id="lBaseD">&nbsp;</small></div></div>
+      <p class="rule" id="lRule"></p>
+      <p class="note" style="margin:10px 0 0">Green line: the strategy. White line: holding the S&amp;P 500. Growth of $1, after trading costs.</p>
+    </div>
+  </div>
+</section>
+
+<section class="chapter wrap honest" id="score">
+  <h2>It keeps score on itself.</h2>
+  <p class="lead">Every call is written down before the outcome is known, then graded. The score is shown next to the laziest forecaster possible: one that says "up" every single time.</p>
+  <div class="vs">
+    <div class="stat"><small>Calls the app got right</small><b id="aHit" class="skel">—</b><span id="aHitS">&nbsp;</span></div>
+    <div class="stat"><small>If it had said "up" every time</small><b id="aUp" class="skel">—</b><span id="aUpS">&nbsp;</span></div>
+  </div>
+  <p class="lead" id="aText" style="font-size:17px;margin-top:26px"></p>
+</section>
+
+<section class="chapter wrap" id="inside">
+  <h2>Everything it reads, every day.</h2>
+  <div class="bento">
+    <div class="cell b4"><div><h3>Daily brief</h3><p>Futures, rates, oil, gold, bitcoin, the S&amp;P 500, sectors, mood, earnings and your stocks, written as sentences and refreshed every 30 minutes while the market is open.</p></div><div class="live" id="bBrief"></div></div>
+    <div class="cell b2"><div><h3>Calendar</h3><p>The economic reports that move markets, with what is expected and why each one matters.</p></div><div class="live" id="bCal"></div></div>
+    <div class="cell b2"><div><h3>Stock terminal</h3><p>Tap any stock for its chart, its news, who is moving it and the companies it depends on.</p></div></div>
+    <div class="cell b2"><div><h3>Insider trades</h3><p>What executives did with their own money.</p></div><div class="live" id="bIns"></div></div>
+    <div class="cell b2"><div><h3>Earnings moves</h3><p>How far each stock really moves after it reports.</p></div><div class="live" id="bEarn"></div></div>
+    <div class="cell b3"><div><h3>AI research</h3><p>A team of AI analysts debates each stock on your list every night and lands on a rating, which is graded a week later.</p></div><div class="live" id="bRes"></div></div>
+    <div class="cell b3"><div><h3>Live news and the crowd</h3><p>Headlines sorted into bullish and bearish as they land, plus the stocks WallStreetBets is talking about.</p></div><div class="live" id="bCrowd"></div></div>
+  </div>
+</section>
+
+<section class="signin wrap" id="signin">
+  <div class="sgrid">
+    <div><h2>Open the desk.</h2><p class="lead">Access is by invitation. Sign in with your username or email and your password.</p></div>
+    <form id="form" autocomplete="on">
+      <h3 id="formTitle">Sign in</h3>
+      <div id="pwBlock">
+        <label for="email">Username or email</label>
+        <input id="email" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required>
       </div>
-      <form class="card" id="form" autocomplete="on">
-        <h3 id="formTitle">Sign in</h3>
-        <div id="pwBlock">
-          <label for="email">Username or email</label>
-          <input id="email" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
-          <label for="password">Password</label>
-          <input id="password" type="password" autocomplete="current-password" required>
-        </div>
-        <button class="btn gold" type="submit" id="submit">Sign in</button>
-        <button class="link" type="button" id="forgot">Forgot password?</button>
-        <div class="msg" id="msg" role="status"></div>
-      </form>
-    </div>
-  </section>
-</div>
-<footer><div class="wrap row"><span>© Kronos Oracle · Private research tool</span><span>Model forecasts are probabilities, not guarantees. Nothing here is financial advice.</span></div></footer>
+      <button class="pill" type="submit" id="submit">Sign in</button>
+      <button class="link" type="button" id="forgot">Forgot password?</button>
+      <div class="msg" id="msg" role="status"></div>
+    </form>
+  </div>
+</section>
+</main>
+<footer><div class="wrap"><span>Kronos Oracle. A private research tool.</span><span>Forecasts are estimates and are often wrong. Nothing here is financial advice.</span></div></footer>
 
 <script>
 const sb = window.supabase.createClient('https://stzeugbijanjwroibtmx.supabase.co', 'sb_publishable_IsJeraZpjoUXbeO8Lr-F_g_14h7UoUm');
 const $ = s => document.querySelector(s);
-const msg = (t, cls='') => { const m = $('#msg'); m.textContent = t; m.className = 'msg ' + cls; };
-let mode = 'signin';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DATA = 'https://raw.githubusercontent.com/takaxkoi/Trading-picker-/main/site/data/';
+const get = f => fetch(DATA + f).then(r => r.ok ? r.json() : null).catch(() => null);
+const sg = (v, d=1) => v == null || isNaN(v) ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v*100).toFixed(d) + '%';
+const p0 = v => v == null ? '—' : Math.round(v*100) + '%';
+const cl = v => v > 0 ? 'up' : v < 0 ? 'dn' : '';
+const zc = v => v < 45 ? 'dn' : v > 55 ? 'up' : '';
+const zoneOf = v => v < 25 ? 'Extreme fear' : v < 45 ? 'Fear' : v < 55 ? 'Neutral' : v < 75 ? 'Greed' : 'Extreme greed';
+const nice = s => new Date(s + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+const seg = (id, cb) => { const s = $(id); s.querySelectorAll('button').forEach(b => b.onclick = () => { s.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); cb(b.dataset.v); }); };
 
+/* one small line chart with a drag-to-read crosshair */
+function lineChart(cv, series, onPick){
+  const ctx = cv.getContext('2d'); let pick = null; const n = series[0].v.length;
+  const draw = () => {
+    const w = cv.clientWidth, h = cv.clientHeight, dpr = window.devicePixelRatio || 1;
+    if (cv.width !== Math.round(w*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+    const pad = 10, X = i => pad + i*(w-2*pad)/Math.max(1,n-1);
+    series.forEach(s => {
+      const vals = s.v.filter(v => v != null), lo = s.min ?? Math.min(...vals), hi = s.max ?? Math.max(...vals), Y = v => h-pad-(v-lo)/((hi-lo)||1)*(h-2*pad);
+      s._Y = Y;
+      (s.marks||[]).forEach(m => { ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.setLineDash([4,5]); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pad, Y(m)); ctx.lineTo(w-pad, Y(m)); ctx.stroke(); ctx.setLineDash([]); });
+      ctx.beginPath(); let started = false;
+      s.v.forEach((v,i) => { if (v == null) return; started ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)); started = true; });
+      ctx.strokeStyle = s.color; ctx.lineWidth = s.w || 2; ctx.lineJoin = 'round'; ctx.stroke();
+      if (s.fill){ ctx.lineTo(X(n-1), h); ctx.lineTo(X(0), h); ctx.closePath(); const g = ctx.createLinearGradient(0,0,0,h); g.addColorStop(0, s.fill); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fill(); }
+    });
+    const i = pick ?? n-1;
+    if (pick != null){ ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X(i), 0); ctx.lineTo(X(i), h); ctx.stroke(); }
+    series.forEach(s => { const v = s.v[i]; if (v == null) return; ctx.beginPath(); ctx.arc(X(i), s._Y(v), 5, 0, 7); ctx.fillStyle = s.color; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#111113'; ctx.stroke(); });
+  };
+  const at = e => { const r = cv.getBoundingClientRect(); pick = Math.max(0, Math.min(n-1, Math.round((e.clientX - r.left - 10)/(r.width-20)*(n-1)))); draw(); onPick(pick); };
+  cv.onpointerdown = e => { try { cv.setPointerCapture(e.pointerId); } catch(_){} at(e); };
+  cv.onpointermove = e => { if (e.pointerType === 'mouse' || e.buttons || e.pressure > 0) at(e); };
+  const end = () => { pick = null; draw(); onPick(n-1); };
+  cv.onpointerup = e => { if (e.pointerType !== 'mouse') end(); }; cv.onpointerleave = end; cv.onpointercancel = end;
+  window.addEventListener('resize', draw);
+  draw(); onPick(n-1);
+  return () => window.removeEventListener('resize', draw);
+}
+
+/* hero phone: today's brief (market-wide sections only) */
+function drawBrief(B){
+  if (!B || !(B.sections||[]).length){ $('#brief').innerHTML = '<p class="sm">The brief is written each morning before the market opens. Sign in to read the last one.</p>'; return; }
+  const keep = ['open','spx','sectors','mood','regime','econ','news'];
+  $('#brief').innerHTML = `<div class="day">${esc(B.day)}</div><div class="hd">${esc(B.headline)}</div><p class="sm">${esc(B.summary||'')}</p>` +
+    ((B.tiles||[]).length ? `<div class="tiles">${B.tiles.map(t => `<div class="tile"><small>${esc(t.label)}</small><b class="${t.tone||''}">${esc(t.value)}</b><span>${esc(t.sub||'')}</span></div>`).join('')}</div>` : '') +
+    B.sections.filter(s => keep.includes(s.key)).map(s => `<div class="sec">${esc(s.title)}</div><div class="box">${s.lines.map(l => `<div class="ln"><i class="${l.tone||''}"></i><span>${esc(l.t)}</span></div>`).join('')}</div>`).join('') +
+    `<p class="sm" style="margin-top:16px">Sign in for your stocks, ideas and the rest.</p>`;
+  $('#bBrief').textContent = B.headline;
+}
+
+function drawToday(F, X, G){
+  if (F && F.score != null){ $('#tMood').textContent = Math.round(F.score); $('#tMood').className = zc(F.score); $('#tMoodS').textContent = `${F.zone}. A week ago it was ${Math.round(F.week_ago)}.`; $('#todayNote').textContent = `Straight from the app, as of the close on ${nice(F.asof)}.`; }
+  if (X && X.stats){ const S = X.stats; $('#tSpx').textContent = sg(S.d1, 2); $('#tSpx').className = cl(S.d1); $('#tSpxS').textContent = S.from_high < -0.002 ? `${Math.abs(S.from_high*100).toFixed(1)}% below its record high, ${sg(S.ytd)} this year.` : `At a record high, ${sg(S.ytd)} this year.`; }
+  if (G && G.now){ $('#tReg').textContent = G.now; $('#tReg').className = 'word ' + (['Correction','Bear market'].includes(G.now) ? 'dn' : ['Calm uptrend'].includes(G.now) ? 'up' : ''); const r = (G.rows||[]).find(x => x.name === G.now); $('#tRegS').textContent = r && r.d63.avg != null ? `From days like this, the S&P 500 was higher three months later ${p0(r.d63.up)} of the time.` : (G.note||''); }
+}
+
+function drawMood(F){
+  if (!F || !(F.history||[]).length) return;
+  let off = null;
+  const go = range => { if (off) off(); const H = F.history.slice(-range), S = F.spy.slice(-range);
+    off = lineChart($('#mChart'), [{v:S, color:'rgba(245,245,247,.55)', w:1.5}, {v:H.map(x => x.v), color:'#C6F432', w:2.5, min:0, max:100, marks:[25,75]}], i => {
+      const v = H[i].v; $('#mScore').textContent = Math.round(v); $('#mScore').className = 'big ' + zc(v); $('#mZone').textContent = zoneOf(v); $('#mDate').textContent = nice(H[i].date); $('#mSpy').textContent = 'S&P 500 fund ' + (S[i] != null ? S[i].toFixed(2) : '—'); }); };
+  go(130); seg('#mSeg', v => go(+v));
+}
+
+function drawNext(F){
+  if (!F || !F.after) return;
+  const rows = F.after.rows.filter(r => r.zone !== 'All days'), all = F.after.rows.find(r => r.zone === 'All days'); let z = F.zone, k = 'd21';
+  const span = {d5:'a week', d21:'a month', d63:'three months'};
+  const out = () => { const r = rows.find(x => x.zone === z) || rows[0], a = r[k];
+    $('#nZones').innerHTML = rows.map(x => `<button class="chip ${x.zone===z?'on':''}" data-z="${esc(x.zone)}">${esc(x.zone)}${x.zone===F.zone?'<em>today</em>':''}</button>`).join('');
+    $('#nZones').querySelectorAll('button').forEach(b => b.onclick = () => { z = b.dataset.z; out(); });
+    $('#nNum').textContent = sg(a.avg); $('#nNum').className = 'num ' + cl(a.avg);
+    $('#nText').textContent = a.avg == null ? 'Too few days like this to say.' : `Average move in the S&P 500 ${span[k]} after ${r.zone.toLowerCase()} days. It ended higher ${p0(a.up)} of the time, across ${r.days.toLocaleString()} days. A typical day: ${sg(all[k].avg)}.`; };
+  out(); seg('#nSeg', v => { k = v; out(); }); $('#nVerdict').textContent = F.after.verdict || '';
+}
+
+function drawSpx(X, F){
+  if (!X || !(X.chart||[]).length) return;
+  const S = X.stats; let off = null;
+  $('#sHigh').textContent = sg(S.from_high); $('#sHigh').className = cl(S.from_high); $('#s200').textContent = sg(S.vs200); $('#s200').className = cl(S.vs200); $('#s50').textContent = p0(X.internals && X.internals.above_50d);
+  if ((X.insights||[]).length > 3) $('#sLead').textContent = X.insights[3];
+  const go = range => { if (off) off(); const C = X.chart.slice(-range), v = C.map(c => c[4]), up = v[v.length-1] >= v[0];
+    off = lineChart($('#sChart'), [{v, color: up ? '#C6F432' : '#FF7A59', w:2.5, fill: up ? 'rgba(198,244,50,.22)' : 'rgba(255,122,89,.22)'}], i => {
+      $('#sPx').textContent = v[i].toFixed(2); const ch = v[i]/v[0]-1; $('#sChg').textContent = sg(ch) + ' since ' + nice(C[0][0]); $('#sChg').className = 'lbl ' + cl(ch); $('#sDate').textContent = nice(C[i][0]); }); };
+  go(130); seg('#sSeg', v => go(+v));
+}
+
+function drawLeague(D){
+  if (!D || !(D.rows||[]).length){ $('#lChips').innerHTML = '<span class="note">The strategy league appears after the next market close.</span>'; return; }
+  const base = D.rows.find(r => r.key === 'spy'), list = D.rows.filter(r => r.kind !== 'Benchmark'); let key = D.best || list[0].key, off = null;
+  if (D.verdict) $('#lLead').textContent = D.verdict;
+  const out = () => { const r = list.find(x => x.key === key) || list[0];
+    $('#lChips').innerHTML = list.map(x => `<button class="chip ${x.key===r.key?'on':''}" data-k="${x.key}">${esc(x.name)}</button>`).join('');
+    $('#lChips').querySelectorAll('button').forEach(b => b.onclick = () => { key = b.dataset.k; out(); });
+    const lo = Math.min(...r.curve, ...base.curve), hi = Math.max(...r.curve, ...base.curve);
+    if (off) off();
+    off = lineChart($('#lChart'), [{v:base.curve, color:'rgba(245,245,247,.6)', w:1.5, min:lo, max:hi}, {v:r.curve, color:'#C6F432', w:2.5, min:lo, max:hi}], i => {
+      $('#lRule').innerHTML = `<b style="color:var(--ink)">${esc(r.curve_dates[i].slice(0,7))}:</b> $1 had become $${r.curve[i].toFixed(2)} in the strategy and $${base.curve[i].toFixed(2)} in the S&amp;P 500. ${esc(r.rule)}${r.bias ? ' The test flatters this one: it only includes companies still in the index today.' : ''}`; });
+    $('#lGain').textContent = sg(r.all.cagr); $('#lGain').className = r.all.cagr > base.all.cagr ? 'up' : 'dn';
+    $('#lDrop').textContent = sg(r.all.dd, 0); $('#lDrop').className = r.all.dd > base.all.dd ? 'up' : 'dn';
+    $('#lBaseG').textContent = `S&P 500: ${sg(base.all.cagr)}`; $('#lBaseD').textContent = `S&P 500: ${sg(base.all.dd, 0)}`; };
+  out();
+}
+
+function drawScore(A){
+  if (!A || !A.log) return; const L = A.log;
+  $('#aHit').textContent = p0(L.hit); $('#aHit').className = L.hit >= L.always_up ? 'up' : 'dn'; $('#aHitS').textContent = `of ${L.n.toLocaleString()} graded calls, over ${L.days} trading days`;
+  $('#aUp').textContent = p0(L.always_up); $('#aUp').className = ''; $('#aUpS').textContent = 'the bar every forecast has to clear';
+  $('#aText').textContent = L.hit >= L.always_up ? 'So far the app is ahead of the lazy forecaster. The record is still short, and the scorecard inside shows exactly where it is right and wrong.' : 'So far the app has not beaten the lazy forecaster, and it says so on its own scorecard. Calls that kept failing have been switched off, and the record keeps building.';
+}
+
+(async () => {
+  const [B, F, X, G, A] = await Promise.all(['brief.json','feargreed.json','spx.json','regime.json','accuracy.json'].map(get));
+  drawBrief(B); drawToday(F, X, G); drawMood(F); drawNext(F); drawSpx(X, F); drawScore(A);
+  const [D, E, I, R, C, W] = await Promise.all(['strategies.json','earnings.json','insiders.json','research.json','econ.json','wsb.json'].map(get));
+  drawLeague(D);
+  if (I && I.headline) $('#bIns').textContent = I.headline;
+  if (E && E.headline) $('#bEarn').textContent = E.headline[0].toUpperCase() + E.headline.slice(1);
+  if (R && R.ratings){ const n = Object.keys(R.ratings).length; if (n) $('#bRes').textContent = `${n} stocks rated in the latest run.`; }
+  if (C && (C.events||[]).length){ const e = C.events.find(x => x.impact === 'High') || C.events[0]; $('#bCal').textContent = `Next: ${e.title}, ${e.day}${e.time ? ' at ' + e.time : ''}.`; }
+  if (W && (W.tickers||[]).length){ const t = W.tickers.filter(x => x.ticker).slice(0,3).map(x => x.ticker); if (t.length) $('#bCrowd').textContent = `Most talked about right now: ${t.join(', ')}.`; }
+})();
+
+/* sign in */
+const msg = (t, c='') => { const m = $('#msg'); m.textContent = t; m.className = 'msg ' + c; };
+let mode = 'signin';
 sb.auth.getSession().then(({ data: { session } }) => {
   if (session){
-    ['#navBtn','#heroBtn'].forEach(s => { $(s).textContent = 'Open dashboard'; $(s).href = 'app.html'; });
-    $('#formTitle').textContent = 'You’re signed in';
+    ['#navBtn','#heroBtn'].forEach(s => { $(s).textContent = 'Open the app'; $(s).href = 'app.html'; });
+    $('#formTitle').textContent = 'You are signed in';
     $('#pwBlock').style.display = 'none'; $('#forgot').style.display = 'none';
-    $('#submit').textContent = 'Open dashboard'; mode = 'open';
+    $('#submit').textContent = 'Open the app'; mode = 'open';
   }
 });
-
-$('#form').addEventListener('submit', async (e) => {
+$('#form').addEventListener('submit', async e => {
   e.preventDefault();
   if (mode === 'open'){ location.href = 'app.html'; return; }
   let email = $('#email').value.trim().toLowerCase();
@@ -202,11 +432,10 @@ $('#form').addEventListener('submit', async (e) => {
   $('#submit').disabled = true; msg('Signing in…');
   const { error } = await sb.auth.signInWithPassword({ email, password: $('#password').value });
   $('#submit').disabled = false;
-  if (error) return msg(error.message === 'Invalid login credentials' ? 'That email and password don’t match.' : error.message, 'err');
+  if (error) return msg(error.message === 'Invalid login credentials' ? 'That username and password do not match.' : error.message, 'err');
   msg('Welcome back.', 'ok');
   location.href = 'app.html';
 });
-
 $('#forgot').addEventListener('click', () => {
   mode = mode === 'reset' ? 'signin' : 'reset';
   const reset = mode === 'reset';
@@ -217,34 +446,6 @@ $('#forgot').addEventListener('click', () => {
   $('#forgot').textContent = reset ? 'Back to sign in' : 'Forgot password?';
   msg('');
 });
-
-/* decorative fan of possible futures (illustration only; no market data) */
-(function fan(){
-  const svg = $('#fan'), W = 560, H = 400, split = 300;
-  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const hist = []; let y = 260;
-  for (let i = 0; i <= 30; i++){ y += (rnd() - 0.48) * 14; hist.push([i * split / 30, y]); }
-  let s = `<defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#C6F432" stop-opacity=".0"/><stop offset=".25" stop-color="#C6F432" stop-opacity=".55"/><stop offset="1" stop-color="#DCBE6E" stop-opacity=".15"/></linearGradient></defs>`;
-  for (let g = 0; g < 6; g++) s += `<line x1="0" x2="${W}" y1="${60 + g * 56}" y2="${60 + g * 56}" stroke="#1E1E23"/>`;
-  s += `<line x1="${split}" x2="${split}" y1="30" y2="${H - 20}" stroke="#444444" stroke-dasharray="3 5"/>`;
-  s += `<polyline points="${hist.map(p => p.join(',')).join(' ')}" fill="none" stroke="#EEE9DC" stroke-width="2.2" stroke-linejoin="round"/>`;
-  const end = hist[hist.length - 1];
-  const paths = [];
-  for (let k = 0; k < 30; k++){
-    let py = end[1], drift = (rnd() - 0.5) * 2.6; const pts = [end];
-    for (let i = 1; i <= 26; i++){ py += drift + (rnd() - 0.5) * 9; pts.push([split + i * (W - split - 10) / 26, py]); }
-    paths.push(pts);
-  }
-  paths.forEach((pts, k) => { s += `<polyline class="fp" style="animation-delay:${k * 40}ms" points="${pts.map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="url(#g)" stroke-width="1.2"/>`; });
-  s += `<circle cx="${end[0]}" cy="${end[1]}" r="5" fill="#DCBE6E"/><circle cx="${end[0]}" cy="${end[1]}" r="12" fill="none" stroke="#C6F432" stroke-opacity=".4"><animate attributeName="r" values="6;16;6" dur="3s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values=".6;0;.6" dur="3s" repeatCount="indefinite"/></circle>`;
-  svg.innerHTML = s;
-  const st = document.createElement('style');
-  st.textContent = `.fp{stroke-dasharray:600;stroke-dashoffset:600;animation:draw 2.2s ease forwards}@keyframes draw{to{stroke-dashoffset:0}}@media (prefers-reduced-motion: reduce){.fp{animation:none;stroke-dashoffset:0}}`;
-  document.head.appendChild(st);
-})();
-
-const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
-document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 if (location.hash === '#signin') setTimeout(() => $('#email')?.focus(), 400);
 </script>
 </body>
