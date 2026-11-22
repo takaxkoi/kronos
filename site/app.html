@@ -67,6 +67,13 @@ nav button.on{background:var(--ink);color:var(--bg)}
 .card{background:var(--panel);border-radius:var(--r);padding:16px;min-width:0}
 .card h3{margin:0 0 10px;font-size:13px;font-weight:500;color:var(--muted)}
 .card h3 .r{display:block;color:var(--muted);margin-top:2px}
+.brief .bl{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line);font-size:16px;line-height:1.45;color:var(--ink)}
+.brief .bl:first-child{border-top:0}
+.brief .bl i{flex:0 0 8px;height:8px;border-radius:50%;background:#555;margin-top:8px}
+.brief .bl i.up{background:var(--gold)}.brief .bl i.dn{background:#FF7A59}
+.brief .bl.click{cursor:pointer}
+.btn.more{margin-top:10px;width:100%;min-height:48px;border-radius:24px;border:0;background:var(--bg);color:var(--ink);font-weight:700;font-size:14.5px;cursor:pointer;font-family:inherit}
+.lgx{padding:4px 0 14px;border-top:1px dashed var(--line)}.lgx p{font-size:14.5px;line-height:1.5;color:var(--ink2);margin:10px 0}
 .sec-title{font-size:24px;font-weight:700;line-height:1.15;letter-spacing:-.02em;margin:28px 2px 12px;color:var(--ink)}
 .sec-title small{display:block;font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:2px}
 .hero{font-size:52px;font-weight:700;line-height:1;letter-spacing:-.04em;color:var(--ink)}
@@ -230,7 +237,7 @@ const px = x => x == null || isNaN(x) ? '—' : Math.abs(x) >= 1000 ? x.toLocale
 const money = x => x == null ? '—' : '$' + Math.round(x).toLocaleString();
 const arrow = d => d === 'up' ? '<span class="up">▲</span>' : '<span class="dn">▼</span>';
 const cls = x => x > 0 ? 'up' : x < 0 ? 'dn' : '';
-const dateS = s => s ? new Date(s).toLocaleDateString(undefined,{month:'short',day:'numeric'}) : '—';
+const dateS = s => s ? new Date(/^\d{4}-\d\d-\d\d$/.test(s) ? s + 'T12:00:00' : s).toLocaleDateString(undefined,{month:'short',day:'numeric'}) : '—';
 const safe = t => t.replace('^','_').replace(/=/g,'_').replace(/\//g,'_');
 const ago = s => { if(!s) return '—'; const m = (Date.now() - new Date(s))/60000; return m < 60 ? Math.round(m)+'m ago' : m < 2880 ? Math.round(m/60)+'h ago' : Math.round(m/1440)+'d ago'; };
 const FLAG = {breakout:['🚀 breakout','g'],breakdown:['🕳 breakdown','r'],reversal_up:['↩ bounce','g'],reversal_down:['↪ rollover','r'],
@@ -241,14 +248,14 @@ const meter = a => { const n = a.samples||0, up = Math.round((a.p_up||0)*n); let
 
 let LATEST = null, REPORT = null;
 const MENU = [
-  ['Markets', [['today','Today'],['live','Live prices'],['market','Market map'],['scanner','S&P 500 scan'],['mscan','Market scan'],['other','Crypto, FX, gold']]],
+  ['Markets', [['brief','Daily brief'],['today','Today'],['spx','S&P 500'],['fear','Fear and greed'],['live','Live prices'],['market','Market map'],['scanner','S&P 500 scan'],['mscan','Market scan'],['other','Crypto, FX, gold']]],
   ['Stocks', [['term','Terminal'],['watch','Watchlist'],['research','AI research'],['lenses','Lenses']]],
   ['News and crowd', [['livenews','Live news'],['news','News mood'],['wsb','WallStreetBets']]],
   ['Labs', [['edge','Edge Lab'],['filings','Filings Lab'],['perf','Performance'],['report','Report card'],['backtest','Backtest Lab']]],
-  ['Account', [['paper','Paper trading'],['journal','Journal'],['setup','Setup']]],
+  ['Account', [['league','Strategy league'],['paper','Paper trading'],['journal','Journal'],['setup','Setup']]],
 ];
 const TABS = MENU.flatMap(g => g[1]);
-const QUICK = [['today','Today'],['term','Terminal'],['livenews','Live news'],['live','Prices']];
+const QUICK = [['brief','Brief'],['today','Today'],['spx','S&P 500'],['livenews','News']];
 let LIVE_T = null;
 function menuOpen(open, focus){
   const m = $('#menu'), b = $('#menuBtn');
@@ -257,7 +264,7 @@ function menuOpen(open, focus){
 }
 let STOCKS = null;
 async function menuDraw(q){
-  const active = decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'today';
+  const active = decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'brief';
   q = q.trim();
   if (!q){
     $('#menuBody').innerHTML = MENU.map(([g, items]) => `<h4>${g}</h4><div class="mgrid">${items.map(([k,l]) => `<button data-go="${k}" class="${k===active?'on':''}">${l}</button>`).join('')}</div>`).join('');
@@ -286,7 +293,7 @@ function navRender(active){
 }
 function autoRefresh(key, paths, draw){
   if (LIVE_T) clearInterval(LIVE_T);
-  LIVE_T = setInterval(() => { if ((decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'today') !== key || document.hidden) return; paths.forEach(p => delete cache[p]); draw(true); }, 60000);
+  LIVE_T = setInterval(() => { if ((decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'brief') !== key || document.hidden) return; paths.forEach(p => delete cache[p]); draw(true); }, 60000);
 }
 
 function setupCard(a){
@@ -601,7 +608,7 @@ async function viewReport(){
   if (!R || !R.n){ $('#view').innerHTML = `<div class="empty">No graded calls yet${R?.pending?` — <b>${R.pending}</b> predictions are waiting for their ${'5-day'} window to finish`:''}. The report card fills in automatically as each forecast comes due.</div>`; return; }
   const tbl = (rows, label) => rows && rows.length ? `<div class="tbl"><table><thead><tr><th>${label}</th><th class="n">Calls</th><th class="n">Hit rate</th><th class="n">Avg move in called direction</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.key)}</td><td class="n">${r.n}</td><td class="n ${r.hit_rate>=.5?'up':'dn'}">${pct0(r.hit_rate)}</td><td class="n ${cls(r.avg_move)}">${pct(r.avg_move,2)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Not enough calls yet.</div>';
   const st = R.streak || {}, P = R.plans || {};
-  let h = `<div class="grid g4 keep2">
+  let h = await accuracyHTML() + `<div class="grid g4 keep2">
     <div class="card"><h3>Hit rate</h3><div class="hero gold">${pct0(R.hit_rate)}</div><div class="sub">direction right on ${R.n} graded calls · coin flip = 50%</div></div>
     <div class="card"><h3>High-score calls</h3><div class="hero ${R.hit_rate_high>=.5?'up':'dn'}">${pct0(R.hit_rate_high)}</div><div class="sub">score 75+ · ${R.n_high} calls</div></div>
     <div class="card"><h3>Streak</h3><div class="hero ${st.current_type==='win'?'up':'dn'}">${st.current||0}${st.current_type==='win'?'W':'L'}</div><div class="sub">best ${st.longest_win||0}W · worst ${st.longest_loss||0}L (score 75+)</div></div>
@@ -1034,6 +1041,125 @@ function candleChart(id, ch){
   wire('#lwcRange', 'range', true); wire('#lwcType', 'type', false);
 }
 function setupNeeded(){ location.hash = 'setup'; }
+/* ---------- Daily brief, fear and greed, S&P 500, strategy league ---------- */
+const sgn = (v, d=1) => v == null || isNaN(v) ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v*100).toFixed(d) + '%';
+function segWire(id, cb){ const s = document.getElementById(id); if (!s) return; s.querySelectorAll('button').forEach(b => b.onclick = () => { s.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); cb(b.dataset.v); }); }
+const segHTML = (id, opts, on) => `<div class="seg" id="${id}">${opts.map(([v,l]) => `<button data-v="${v}" class="${String(v)===String(on)?'on':''}">${l}</button>`).join('')}</div>`;
+function goWire(root){ root.querySelectorAll('[data-go]').forEach(e => e.onclick = () => { location.hash = e.dataset.go; }); }
+const zoneCls = v => v < 45 ? 'dn' : v > 55 ? 'up' : '';
+
+async function viewBrief(){
+  const B = await get('brief.json');
+  if (!B || !(B.sections||[]).length){ $('#view').innerHTML = '<div class="empty">The daily brief is written each morning before the market opens. The first one has not run yet.</div>'; return; }
+  let h = `<div class="lede"><div class="sub" style="margin-bottom:6px">${esc(B.day)} · written ${ago(B.generated)}</div><h1>${esc(B.headline)}</h1><p>${esc(B.summary||'')}</p></div>`;
+  if ((B.tiles||[]).length) h += `<div class="grid g4 keep2">${B.tiles.map(t => `<div class="card"><h3>${esc(t.label)}</h3><div class="hero ${t.tone||''}">${esc(t.value)}</div><div class="sub">${esc(t.sub||'')}</div></div>`).join('')}</div>`;
+  h += B.sections.map(s => `<div class="sec-title">${esc(s.title)}</div><div class="card brief">${s.lines.map(l => `<div class="bl ${l.go?'click':''}" ${l.go?`data-go="${esc(l.go)}"`:''}><i class="${l.tone||''}"></i><span>${esc(l.t)}</span></div>`).join('')}${s.go ? `<button class="btn more" data-go="${esc(s.go)}">Open ${esc(s.title.toLowerCase().replace(/ \(.*/, ''))}</button>` : ''}</div>`).join('');
+  h += `<div class="sub" style="margin:18px 2px">Prices behind this brief are from ${esc(B.data_date||'the last close')}. Forecasts are estimates and are often wrong. This is not financial advice.</div>`;
+  $('#view').innerHTML = h; goWire($('#view'));
+}
+
+let FG = {range:130, hz:'d21'};
+async function viewFear(){
+  const F = await get('feargreed.json');
+  if (!F || F.score == null){ $('#view').innerHTML = '<div class="empty">The fear and greed score is worked out after each market close. The first one has not run yet.</div>'; return; }
+  const chg = F.score - F.week_ago, words = {'Extreme fear':'Investors are selling first and asking later.', 'Fear':'Investors are nervous and pulling back.', 'Neutral':'No strong mood either way.', 'Greed':'Investors are confident and buying.', 'Extreme greed':'Investors are piling in. This is when risks get ignored.'};
+  let h = `<div class="lede"><div class="sub" style="margin-bottom:6px">As of the close on ${dateS(F.asof)}</div><h1>${esc(F.zone)}: ${Math.round(F.score)} of 100</h1><p>${words[F.zone]||''} 0 is maximum fear, 100 is maximum greed. It was ${Math.round(F.week_ago)} a week ago and ${Math.round(F.month_ago)} a month ago${F.year_ago != null ? `, ${Math.round(F.year_ago)} a year ago` : ''}.</p></div>`;
+  h += `<div class="grid g4 keep2">${[['Now', F.score], ['Yesterday', F.yesterday], ['A week ago', F.week_ago], ['A month ago', F.month_ago]].map(([l,v]) => `<div class="card"><h3>${l}</h3><div class="hero ${zoneCls(v)}">${Math.round(v)}</div><div class="sub">${esc(v < 25 ? 'Extreme fear' : v < 45 ? 'Fear' : v < 55 ? 'Neutral' : v < 75 ? 'Greed' : 'Extreme greed')}</div></div>`).join('')}</div>`;
+  h += `<div class="card" style="margin-top:12px"><h3>The score over time, against the S&P 500</h3><div class="toolbar">${segHTML('fgRange', [[66,'3M'],[130,'6M'],[260,'1Y']], FG.range)}</div><div id="fgChart"></div><div class="sub">Touch the chart to read any day. Under 25 is extreme fear, over 75 is extreme greed.</div></div>`;
+  h += `<div class="sec-title">What is driving it<small>Six gauges, most fearful first. Tap one to see how it is measured.</small></div><div class="card">${F.parts.map((p,i) => `<div class="idea click" data-part="${i}"><span><b>${esc(p.name)}</b><small style="display:block;color:var(--muted)">${esc(p.now)}</small><small class="why" hidden style="display:none;color:var(--ink2);margin-top:6px;line-height:1.45">${esc(p.why)} A week ago this gauge scored ${Math.round(p.week_ago)}.</small></span><span style="text-align:right"><span class="big ${zoneCls(p.score)}">${Math.round(p.score)}</span><small style="display:block;color:var(--muted)">${esc(p.zone)}</small></span></div>`).join('')}</div>`;
+  h += `<div class="sec-title">Does it work?<small>What the S&P 500 did after days in each zone, ${dateS(F.first)} to now</small></div><div class="card"><div class="toolbar">${segHTML('fgHz', [['d5','1 week later'],['d21','1 month later'],['d63','3 months later']], FG.hz)}</div><div id="fgAfter"></div><p class="sub" style="font-size:14px;line-height:1.5;margin-top:10px">${esc(F.after.verdict)}</p></div>`;
+  if (F.crypto && F.crypto.now){ const c = F.crypto; h += `<div class="sec-title">Bitcoin fear and greed</div><div class="card"><div class="idea"><span><b>${esc(c.now.label)}</b><small style="display:block;color:var(--muted)">${c.week_ago ? `A week ago ${c.week_ago.value}` : ''}${c.month_ago ? `, a month ago ${c.month_ago.value}` : ''}</small></span><span class="big ${zoneCls(c.now.value)}">${c.now.value}</span></div><div class="sub" style="margin-top:8px">Source: <a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.credit)}</a>. Covers Bitcoin only.</div></div>`; }
+  h += `<div class="sec-title">Which index is this?</div><div class="card"><p style="margin:0;font-size:15px;line-height:1.55;color:var(--ink2)">${esc(F.method)} CNN's Fear and Greed Index is the famous one, but CNN offers no public data feed and blocks automated readers, so it cannot be tested or relied on here. This version uses the same idea with data you can check, and it has been tested above. <a href="https://www.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">See CNN's reading</a> to compare.</p></div>`;
+  $('#view').innerHTML = h; ecClear();
+  const chart = () => { ecClear(); const H = F.history.slice(-FG.range), S = F.spy.slice(-FG.range);
+    ec('fgChart', {legend:{show:false}, xAxis:{type:'category', data:H.map(x => x.date.slice(5)), axisLine:{lineStyle:{color:C.line}}, axisLabel:{color:C.muted, interval:Math.floor(H.length/4)}},
+      yAxis:[{type:'value', min:0, max:100, splitLine:{lineStyle:{color:'rgba(255,255,255,.06)'}}, axisLabel:{color:C.muted}}, {type:'value', scale:true, splitLine:{show:false}, axisLabel:{color:C.muted}}],
+      series:[{name:'Fear and greed', type:'line', data:H.map(x => x.v), showSymbol:false, lineStyle:{color:C.up, width:2.5}, itemStyle:{color:C.up}, markLine:{silent:true, symbol:'none', lineStyle:{color:'#555', type:'dashed'}, label:{color:C.muted, fontSize:10}, data:[{yAxis:25, name:'fear'}, {yAxis:75, name:'greed'}]}},
+        {name:'S&P 500 (SPY)', type:'line', yAxisIndex:1, data:S, showSymbol:false, lineStyle:{color:C.ink, width:1.5, opacity:.7}, itemStyle:{color:C.ink}}]}, 280); };
+  const after = () => { const k = FG.hz; $('#fgAfter').innerHTML = `<div class="tbl"><table><thead><tr><th>When the mood was</th><th class="n">Days</th><th class="n">Average move</th><th class="n">Ended higher</th></tr></thead><tbody>${F.after.rows.map(r => `<tr style="${r.zone===F.zone?'background:rgba(198,244,50,.08)':''}"><td><b>${esc(r.zone)}</b>${r.zone===F.zone?' <small style="color:var(--gold)">now</small>':''}</td><td class="n">${r.days.toLocaleString()}</td><td class="n ${cls(r[k].avg)}">${sgn(r[k].avg)}</td><td class="n">${pct0(r[k].up)}</td></tr>`).join('')}</tbody></table></div>`; };
+  chart(); after();
+  segWire('fgRange', v => { FG.range = +v; chart(); }); segWire('fgHz', v => { FG.hz = v; after(); });
+  $('#view').querySelectorAll('[data-part]').forEach(e => e.onclick = () => { const w = e.querySelector('.why'); const open = w.style.display === 'none'; w.style.display = open ? 'block' : 'none'; });
+}
+
+let SPX = {under:'above50', per:'d1', mv:'d1', side:'up'};
+async function viewSpx(){
+  const X = await get('spx.json');
+  if (!X || !X.stats){ $('#view').innerHTML = '<div class="empty">The S&P 500 page fills in after the next market close.</div>'; return; }
+  const S = X.stats, I = (LATEST && LATEST.indices || []).find(a => a.ticker === 'SPY');
+  let h = `<div class="lede"><div class="sub" style="margin-bottom:6px">S&P 500, tracked through the SPY fund · close of ${dateS(S.date)}</div><h1>${px(S.last)}, ${S.from_high < -0.002 ? Math.abs(S.from_high*100).toFixed(1) + '% below its record' : 'at a record high'}</h1><p>${esc(X.insights[1]||'')}</p></div>`;
+  h += `<div class="grid g4 keep2">${[['Last day', S.d1, 2], ['Five days', S.d5, 1], ['One month', S.d21, 1], ['This year', S.ytd, 1]].map(([l,v,d]) => `<div class="card"><h3>${l}</h3><div class="hero ${cls(v)}" style="font-size:40px">${sgn(v, d)}</div></div>`).join('')}</div>`;
+  h += chartCard('Price');
+  if (I) h += `<div class="card" style="margin-top:12px"><h3>The model's forecast</h3><div class="idea click" data-go="t/SPY"><span><b>Next 5 trading days</b><small style="display:block;color:var(--muted)">${I.agree_count} of ${I.samples} simulated futures point ${I.direction}. Likely range ${px(I.ranges?.week?.low)} to ${px(I.ranges?.week?.high)}.</small></span><span class="big ${cls(I.median_return)}">${sgn(I.median_return)}</span></div></div>`;
+  h += `<div class="sec-title">What stands out</div><div class="card brief">${X.insights.slice(2).map(t => `<div class="bl"><i></i><span>${esc(t)}</span></div>`).join('')}</div>`;
+  h += `<div class="sec-title">Lines to watch<small>Prices where buyers or sellers have tended to show up</small></div><div class="card">${[['Record high', S.high], ['20-day high', S.hi20], ['50-day average', S.ma50], ['200-day average', S.ma200], ['20-day low', S.lo20], ['One-year low', S.low52]].sort((a,b) => b[1]-a[1]).map(([l,v]) => `<div class="idea"><span><b>${l}</b><small style="display:block;color:var(--muted)">${v >= S.last ? 'above' : 'below'} the last close</small></span><span style="text-align:right"><span class="big">${px(v)}</span><small style="display:block;color:var(--muted)">${sgn(v/S.last-1)} away</small></span></div>`).join('')}</div>`;
+  h += `<div class="sec-title">Under the surface<small>The index is ${X.stocks} stocks. This shows how many are taking part.</small></div><div class="card"><div class="toolbar">${segHTML('spxUnder', [['above50','Above 50-day'],['above200','Above 200-day'],['hl','New highs and lows'],['fear_greed','Fear and greed']], SPX.under)}</div><div id="spxUnderC"></div><div class="sub" id="spxUnderT"></div></div>`;
+  h += `<div class="sec-title">Sectors<small>Tap a sector to open its fund</small></div><div class="card"><div class="toolbar">${segHTML('spxPer', [['d1','Day'],['d5','Week'],['d21','Month'],['ytd','This year']], SPX.per)}</div><div id="spxSec"></div></div>`;
+  h += `<div class="sec-title">Biggest movers in the index</div><div class="card"><div class="toolbar">${segHTML('spxMv', [['d1','Day'],['d5','Week'],['d21','Month']], SPX.mv)}${segHTML('spxSide', [['up','Risers'],['down','Fallers']], SPX.side)}</div><div id="spxMov"></div></div>`;
+  h += `<div class="sec-title">What each month usually does<small>Average over the last ${X.season[0]?.years||0} or so years. Touch a bar for the detail.</small></div><div class="card"><div id="spxSeason"></div><div class="sub">${esc(X.this_month)} so far: ${sgn(X.month_to_date)}. Ten years is a short record, so this is a tendency, not a rule.</div></div>`;
+  const P = X.pullbacks;
+  h += `<div class="sec-title">Past pullbacks of 5% or more<small>${P.count} in ${P.years} years. Typical depth ${sgn(P.median_depth,0)}, about ${Math.round(P.median_days)} days from high back to high.</small></div><div class="card"><div class="tbl"><table><thead><tr><th>High</th><th>Low</th><th class="n">Fall</th><th class="n">Days to recover</th></tr></thead><tbody>${P.list.slice().reverse().map(p => `<tr><td class="mono">${dateS(p.peak)}</td><td class="mono">${dateS(p.low)}</td><td class="n dn">${sgn(p.depth)}</td><td class="n">${p.days != null ? p.days : '<span style="color:var(--gold)">still open</span>'}</td></tr>`).join('')}</tbody></table></div></div>`;
+  h += `<div class="grid g2 keep2" style="margin-top:12px"><div class="card"><h3>Daily swings</h3><div class="hero" style="font-size:40px">${pct0(S.vol20)}</div><div class="sub">a year at the current pace. Past year: ${pct0(S.vol_year)}</div></div><div class="card"><h3>Streak</h3><div class="hero ${S.streak_dir==='up'?'up':'dn'}" style="font-size:40px">${S.streak} ${S.streak_dir}</div><div class="sub">days in a row. RSI ${Math.round(S.rsi)} (under 30 is oversold)</div></div></div>`;
+  $('#view').innerHTML = h; ecClear(); goWire($('#view'));
+  candleChart('lwc', {history: X.chart, future: [], bands: {}});
+  const B = X.breadth, lab = B.dates.map(d => d.slice(5)), ax = {type:'category', data:lab, axisLine:{lineStyle:{color:C.line}}, axisLabel:{color:C.muted, interval:Math.floor(lab.length/4)}};
+  const spy = {name:'S&P 500 (SPY)', type:'line', yAxisIndex:1, data:B.spy, showSymbol:false, lineStyle:{color:C.ink, width:1.5, opacity:.6}, itemStyle:{color:C.ink}};
+  const y2 = {type:'value', scale:true, splitLine:{show:false}, axisLabel:{color:C.muted}}, yl = {splitLine:{lineStyle:{color:'rgba(255,255,255,.06)'}}, axisLabel:{color:C.muted}};
+  let underC = null;
+  const under = () => { if (underC){ try { underC.dispose(); } catch(e){} ECS = ECS.filter(c => c !== underC); }
+    const k = SPX.under, N = X.internals; let series, y1 = Object.assign({type:'value'}, yl), t;
+    if (k === 'hl'){ series = [{name:'One-year highs', type:'bar', data:B.highs, itemStyle:{color:C.up}}, {name:'One-year lows', type:'bar', data:B.lows.map(v => -v), itemStyle:{color:C.dn}}]; t = `${N.new_highs} stocks at a one-year high and ${N.new_lows} at a one-year low on the last day. Lows outnumbering highs while the index is near its peak is an early warning.`; }
+    else if (k === 'fear_greed'){ series = [{name:'Fear and greed', type:'line', data:B.fear_greed, showSymbol:false, lineStyle:{color:C.up, width:2.5}, itemStyle:{color:C.up}}]; y1.min = 0; y1.max = 100; t = `Score now ${Math.round(X.fear_greed.score)}, ${X.fear_greed.zone.toLowerCase()}.`; }
+    else { series = [{name: k === 'above50' ? 'Share above 50-day average' : 'Share above 200-day average', type:'line', data:B[k].map(v => Math.round(v*100)), showSymbol:false, areaStyle:{color:'rgba(198,244,50,.12)'}, lineStyle:{color:C.up, width:2.5}, itemStyle:{color:C.up}}]; y1.min = 0; y1.max = 100; y1.axisLabel = {color:C.muted, formatter:'{value}%'};
+      t = k === 'above50' ? `${pct0(N.above_50d)} of stocks are above their 50-day average, against ${pct0(N.above_50d_week_ago)} a week ago. Under 30% has marked washed-out lows; over 80% means nearly everything has already run.` : `${pct0(N.above_200d)} of stocks are in a long-term uptrend. A healthy market keeps this above half.`; }
+    underC = ec('spxUnderC', {legend:{show:false}, xAxis:ax, yAxis:[y1, y2], series:[...series, spy]}, 280); $('#spxUnderT').textContent = t; };
+  const sec = () => { const k = SPX.per, rows = X.sectors.slice().sort((a,b) => (b[k]||0)-(a[k]||0));
+    $('#spxSec').innerHTML = rows.map(r => `<div class="idea click" data-go="t/${esc(r.etf)}"><span><b>${esc(r.name)}</b><small style="display:block;color:var(--muted)">${r.above50 != null ? pct0(r.above50) + ' of its ' + r.members + ' stocks above their 50-day average' : esc(r.etf)}</small></span><span class="big ${cls(r[k])}">${sgn(r[k])}</span></div>`).join(''); goWire($('#spxSec')); };
+  const mov = () => { const rows = X.movers[SPX.mv][SPX.side];
+    $('#spxMov').innerHTML = rows.map(r => `<div class="idea click" data-go="t/${esc(r.t)}"><span><b>${esc(r.t)}</b><small style="display:block;color:var(--muted)">${esc(r.name||'')}${r.sector ? ', ' + esc(r.sector) : ''}</small></span><span style="text-align:right"><span class="big ${cls(r.v)}">${sgn(r.v)}</span><small style="display:block;color:var(--muted)">${px(r.price)}</small></span></div>`).join(''); goWire($('#spxMov')); };
+  ec('spxSeason', {tooltip:{trigger:'axis', formatter: p => { const s = X.season[p[0].dataIndex]; return `<b>${s.month}</b><br>average ${sgn(s.avg)}<br>up in ${Math.round(s.up*s.years)} of ${s.years} years<br>best ${sgn(s.best)}, worst ${sgn(s.worst)}`; }},
+    xAxis:{type:'category', data:X.season.map(s => s.month.slice(0,3)), axisLine:{lineStyle:{color:C.line}}, axisLabel:{color:C.muted, interval:0}}, yAxis:Object.assign({type:'value', axisLabel:{color:C.muted, formatter: v => v + '%'}}, {splitLine:{lineStyle:{color:'rgba(255,255,255,.06)'}}}),
+    series:[{type:'bar', data:X.season.map(s => ({value:+(s.avg*100).toFixed(2), itemStyle:{color: s.avg >= 0 ? C.up : C.dn, opacity: s.month === X.this_month ? 1 : .45, borderRadius:4}}))}]}, 240);
+  under(); sec(); mov();
+  segWire('spxUnder', v => { SPX.under = v; under(); }); segWire('spxPer', v => { SPX.per = v; sec(); }); segWire('spxMv', v => { SPX.mv = v; mov(); }); segWire('spxSide', v => { SPX.side = v; mov(); });
+}
+
+let LG = {half:'all', open:null};
+async function viewLeague(){
+  const D = await get('strategies.json');
+  if (!D || !(D.rows||[]).length){ $('#view').innerHTML = '<div class="empty">The strategy league starts after the next market close.</div>'; return; }
+  const base = D.rows.find(r => r.key === 'spy'), cols = ['#C6F432','#8AB4FF','#FF7A59','#F2F2F2','#E6A8FF','#FFD166','#5EEAD4','#888888','#BBBBBB'];
+  let h = `<div class="lede"><div class="sub" style="margin-bottom:6px">Seven published strategies, each running its own $${D.cash.toLocaleString()} practice account since ${dateS(D.live_from)}</div><h1>${(() => { const real = D.rows.filter(r => r.kind !== 'Benchmark'), n = real.filter(r => r.beat_risk).length; return n ? n + ' of ' + real.length + ' strategies beat holding the S&P 500 after counting risk.' : 'None of these beat simply holding the S&P 500. Some lose far less on the way down.'; })()}</h1><p>${esc(D.verdict)}</p></div>`;
+  h += `<div class="sec-title">Practice accounts<small>Fake money, real prices. Tap a strategy for its rules and what it holds.</small></div><div class="card" id="lgLive"></div>`;
+  h += `<div class="sec-title">How they did on past prices<small>${dateS(D.start)} to ${dateS(D.asof)}, after trading costs</small></div><div class="card"><div class="toolbar">${segHTML('lgHalf', [['all','Whole test'],['early','Older half'],['late','Newer half']], LG.half)}</div><div id="lgTbl"></div></div>`;
+  h += `<div class="card" style="margin-top:12px"><h3>Growth of $1</h3><div id="lgChart"></div><div class="sub">Tap a name in the legend to hide or show it.</div></div>`;
+  h += `<div class="card" style="margin-top:12px"><p style="margin:0;font-size:14.5px;line-height:1.55;color:var(--ink2)">${esc(D.caveat)}</p></div>`;
+  $('#view').innerHTML = h; ecClear();
+  const live = () => { $('#lgLive').innerHTML = D.rows.map(r => { const open = LG.open === r.key, L = r.live;
+      return `<div class="idea click" data-k="${r.key}"><span><b>${esc(r.name)}</b><small style="display:block;color:var(--muted)">${r.holdings.length ? 'Holds ' + r.holdings.slice(0,4).map(x => esc(x.ticker)).join(', ') + (r.holdings.length > 4 ? ' and ' + (r.holdings.length-4) + ' more' : '') : 'All in cash'}${r.bias ? ' · test flatters this one' : ''}</small></span><span style="text-align:right"><span class="big">${money(L.equity)}</span><small style="display:block" class="${cls(L.return)}">${L.days ? sgn(L.return, 2) + ' in ' + L.days + ' days' : 'starts next session'}</small></span></div>` +
+        (open ? `<div class="lgx"><p><b>The rule.</b> ${esc(r.rule)}</p><p><b>Why it might work.</b> ${esc(r.why)}</p><p><b>Where it comes from.</b> ${esc(r.source)}. ${r.cadence === 'daily' ? 'Checked every day.' : 'Rebalanced at the end of each month.'} About ${r.trades_per_year.toFixed(1)} full turnovers of the account a year; in the market ${pct0(r.invested)} of days.</p>${r.buys.length || r.sells.length ? `<p><b>Changes on the last day.</b> ${r.buys.length ? 'Bought ' + r.buys.slice(0,12).map(esc).join(', ') + '. ' : ''}${r.sells.length ? 'Sold ' + r.sells.slice(0,12).map(esc).join(', ') + '.' : ''}</p>` : ''}
+          ${r.holdings.length ? `<div class="tbl"><table><thead><tr><th>Holding</th><th class="n">Share of account</th><th class="n">Shares</th><th class="n">Price</th></tr></thead><tbody>${r.holdings.slice(0,30).map(x => `<tr class="click" data-go="t/${esc(x.ticker)}"><td><b>${esc(x.ticker)}</b></td><td class="n">${pct0(x.weight)}</td><td class="n">${x.shares.toLocaleString()}</td><td class="n">${px(x.price)}</td></tr>`).join('')}${r.cash > 0.005 ? `<tr><td><b>Cash</b></td><td class="n">${pct0(r.cash)}</td><td></td><td></td></tr>` : ''}</tbody></table></div>` : ''}</div>` : ''); }).join('');
+    $('#lgLive').querySelectorAll('[data-k]').forEach(e => e.onclick = () => { LG.open = LG.open === e.dataset.k ? null : e.dataset.k; live(); }); goWire($('#lgLive')); };
+  const tbl = () => { const k = LG.half, b = base[k];
+    $('#lgTbl').innerHTML = `<div class="tbl"><table><thead><tr><th>Strategy</th><th class="n">Gain a year</th><th class="n">Worst drop</th><th class="n">Gain per unit of risk</th></tr></thead><tbody>${D.rows.slice().sort((a,c) => (c[k].sharpe||-9)-(a[k].sharpe||-9)).map(r => { const s = r[k]; return `<tr style="${r.kind==='Benchmark'?'color:var(--muted)':''}"><td><b>${esc(r.name)}</b>${r.bias ? '<small style="display:block;color:var(--muted)">test flatters this one</small>' : ''}</td><td class="n ${r.kind!=='Benchmark' ? (s.cagr > b.cagr ? 'up' : 'dn') : ''}">${sgn(s.cagr)}</td><td class="n ${r.kind!=='Benchmark' ? (s.dd > b.dd ? 'up' : 'dn') : ''}">${sgn(s.dd,0)}</td><td class="n ${r.kind!=='Benchmark' ? ((s.sharpe||0) > (b.sharpe||0) ? 'up' : 'dn') : ''}">${s.sharpe != null ? s.sharpe.toFixed(2) : '—'}</td></tr>`; }).join('')}</tbody></table></div><div class="sub" style="margin-top:8px">Green beats holding the S&P 500 on that measure, orange does not. Gain per unit of risk is the Sharpe ratio: higher means a smoother ride for the gain.</div>`; };
+  live(); tbl(); segWire('lgHalf', v => { LG.half = v; tbl(); });
+  ec('lgChart', {legend:{show:true, type:'scroll', bottom:0, textStyle:{color:C.ink2, fontSize:11}, inactiveColor:'#555'}, grid:{left:8, right:16, top:16, bottom:44, containLabel:true},
+    xAxis:{type:'category', data:base.curve_dates.map(d => d.slice(0,7)), axisLine:{lineStyle:{color:C.line}}, axisLabel:{color:C.muted, interval:Math.floor(base.curve_dates.length/4)}},
+    yAxis:{type:'log', splitLine:{lineStyle:{color:'rgba(255,255,255,.06)'}}, axisLabel:{color:C.muted, formatter: v => '$' + v}},
+    series:D.rows.map((r,i) => ({name:r.name, type:'line', data:r.curve, showSymbol:false, lineStyle:{color:cols[i%cols.length], width: r.key==='spy' ? 3 : 1.6, type: r.kind==='Benchmark' ? 'dashed' : 'solid'}, itemStyle:{color:cols[i%cols.length]}}))}, 360);
+}
+
+async function accuracyHTML(){
+  const A = await get('accuracy.json'); if (!A || !A.log) return '';
+  const L = A.log, t = (rows, head) => `<div class="tbl"><table><thead><tr><th>${head}</th><th class="n">Calls</th><th class="n">Right</th><th class="n">Always-up</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.key)}</td><td class="n">${r.n.toLocaleString()}</td><td class="n ${r.hit >= r.always_up ? 'up' : 'dn'}">${pct0(r.hit)}</td><td class="n">${pct0(r.always_up)}</td></tr>`).join('')}</tbody></table></div>`;
+  return `<div class="lede"><h1>${pct0(L.hit)} right. Guessing up every time would have scored ${pct0(L.always_up)}.</h1><p>${esc(A.bottom_line)}</p></div>
+    <div class="sec-title">Why calls go wrong</div><div class="card brief">${A.findings.map(f => `<div class="bl"><i class="dn"></i><span><b>${esc(f.title)}.</b> ${esc(f.text)}</span></div>`).join('')}</div>
+    <div class="sec-title">What gets more calls right<small>Each rule comes from the numbers below</small></div><div class="card">${A.fixes.map(f => `<div class="idea"><span><b>${esc(f.rule)}</b><small style="display:block;color:var(--muted);line-height:1.45;margin-top:2px">${esc(f.why)}</small></span><span style="font-size:12.5px;font-weight:700;white-space:nowrap;color:${f.status==='Waiting'?'var(--muted)':'var(--gold)'}">${esc(f.status)}</span></div>`).join('')}</div>
+    <div class="sec-title">Where the app is right and wrong<small>Green means it beat always saying up</small></div><div class="card">${t(L.by_direction, 'What it said')}</div><div class="card" style="margin-top:10px">${t(L.by_span, 'Time frame')}</div><div class="card" style="margin-top:10px">${t(L.by_kind, 'Market')}</div><div class="card" style="margin-top:10px">${t(L.by_sure, 'How sure the model was')}</div>
+    <div class="sec-title">How often stocks really rise<small>${A.base.stocks} big stocks, next 5 trading days, ${dateS(A.base.first)} to ${dateS(A.base.last)}. A forecast has to beat these.</small></div><div class="card"><div class="tbl"><table><thead><tr><th>Situation</th><th class="n">Rose</th><th class="n">Average move</th></tr></thead><tbody>${A.base.rows.map(r => `<tr><td><b>${esc(r.name)}</b><small style="display:block;color:var(--muted)">${r.n.toLocaleString()} cases</small></td><td class="n ${r.up > A.base.rows[0].up + 0.005 ? 'up' : r.up < A.base.rows[0].up - 0.005 ? 'dn' : ''}">${(r.up*100).toFixed(1)}%</td><td class="n">${sgn(r.avg, 2)}</td></tr>`).join('')}</tbody></table></div></div>
+    <div class="sec-title">The full scorecard</div>`;
+}
+
 async function viewSetup(){
   $('#view').innerHTML = `<div class="grid g2"><div class="card"><h3>Go-live checklist</h3><ol class="steps">
     <li><b>Turn on Actions.</b> GitHub → your kronos repo → <b>Actions</b> tab → “I understand my workflows, enable them”.</li>
@@ -1054,10 +1180,10 @@ async function viewSetup(){
 }
 
 async function route(){
-  const h = decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'today';
+  const h = decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'brief';
   if (h.startsWith('t/')){ navRender(h.slice(2).toUpperCase()); try { await viewTicker(h.slice(2).toUpperCase()); } catch(e){ $('#view').innerHTML = `<span class="back" onclick="history.back()">Back</span><div class="empty">Couldn't show this ticker: ${esc(e.message)}</div>`; } window.scrollTo(0,0); return; }
   navRender(h); ecClear();
-  const fn = {today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, mscan:viewMarketScan, live:viewLive, livenews:viewLiveNews, news:viewNews, wsb:viewWSB, filings:viewFilings, term:viewTerminal, lenses:viewLenses, edge:viewEdge, perf:viewPerf, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewToday;
+  const fn = {brief:viewBrief, fear:viewFear, spx:viewSpx, league:viewLeague, today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, mscan:viewMarketScan, live:viewLive, livenews:viewLiveNews, news:viewNews, wsb:viewWSB, filings:viewFilings, term:viewTerminal, lenses:viewLenses, edge:viewEdge, perf:viewPerf, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewBrief;
   try { await fn(); } catch(e){ $('#view').innerHTML = `<div class="empty">Couldn't render this view: ${esc(e.message)}</div>`; }
 }
 let GATED = false;
@@ -1077,7 +1203,7 @@ async function boot(){
   LATEST = await get('latest.json');
   if (LATEST){
     $('#stamp').innerHTML = 'Forecasts updated <b>' + ago(LATEST.generated) + '</b>';
-    const m = LATEST.mood || {}; $('#moodPill').innerHTML = 'Mood <b>' + esc((m.label||'—').toLowerCase()) + '</b>, ' + pct0(m.pct_up) + ' up';
+    const m = LATEST.mood || {}; $('#moodPill').innerHTML = 'Forecast lean <b>' + esc((m.label||'—').toLowerCase()) + '</b>, ' + pct0(m.pct_up) + ' up';
     const r = LATEST.report || {}; $('#hitPill').innerHTML = 'Calls right <b>' + (r.hit_rate!=null ? pct0(r.hit_rate) : '—') + '</b>' + (r.n ? ' of ' + r.n.toLocaleString() : '');
   } else { $('#stamp').textContent = 'waiting for first scan'; }
   route();
