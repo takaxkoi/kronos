@@ -139,6 +139,52 @@ form .pill{width:100%;margin-top:22px;min-height:50px}
 .link:hover{color:var(--ink)}
 .msg{font-size:14px;margin-top:10px;min-height:20px;color:var(--ink2)}
 .msg.err{color:var(--coral)}.msg.ok{color:var(--lime)}
+/* counters, marquee, steps, ask, calculator, faq */
+.counts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(min-width:760px){.counts{grid-template-columns:repeat(4,1fr)}}
+.count{background:var(--panel);border-radius:28px;padding:22px}
+.count b{display:block;font-size:clamp(38px,7vw,56px);letter-spacing:-.05em;line-height:1.05;font-weight:700;font-variant-numeric:tabular-nums}
+.count span{display:block;font-size:14.5px;color:var(--ink2);line-height:1.35;margin-top:6px}
+.marq{overflow:hidden;margin-top:40px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.marq div{display:flex;gap:44px;width:max-content;animation:slide 48s linear infinite;font-size:17px;font-weight:600;color:var(--ink2);white-space:nowrap}
+.marq:hover div{animation-play-state:paused}
+@keyframes slide{to{transform:translateX(-50%)}}
+.steps{display:grid;gap:12px;margin-top:36px}
+@media(min-width:800px){.steps{grid-template-columns:repeat(3,1fr)}}
+.step{background:var(--panel);border-radius:28px;padding:26px}
+.step .when{font-size:15px;color:var(--lime);font-weight:600}
+.step h3{margin-top:10px;font-size:24px;letter-spacing:-.02em}
+.step p{margin:10px 0 0;color:var(--ink2);font-size:16px;line-height:1.45}
+.chat{display:flex;flex-direction:column;gap:10px;min-height:250px}
+.bub{max-width:92%;border-radius:22px;padding:13px 16px;font-size:16px;line-height:1.45}
+.bub.q{align-self:flex-end;background:var(--lime);color:#0B0B0B;font-weight:600;border-bottom-right-radius:6px}
+.bub.a{align-self:flex-start;background:var(--panel2);border-bottom-left-radius:6px}
+.bub .row{display:flex;justify-content:space-between;gap:14px;border-top:1px solid var(--line);padding:8px 0 0;margin-top:8px;font-size:15px}
+.bub .row b{white-space:nowrap}
+.asks{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:16px -22px 0;padding:0 22px}
+.asks::-webkit-scrollbar{display:none}
+.asks .chip{flex:none;font-size:14px;min-height:40px}
+.sl{margin-top:18px}
+.sl label{display:flex;justify-content:space-between;margin:0 0 8px;font-size:15px;color:var(--ink2)}
+.sl label b{color:var(--ink);font-size:17px;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;min-height:0;height:6px;border-radius:6px;background:var(--panel2);border:0;padding:0;margin:10px 0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:var(--ink);border:0;box-shadow:0 2px 10px rgba(0,0,0,.6);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:var(--ink);border:0;cursor:pointer}
+.res{margin-top:18px}
+.res .r{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0;border-top:1px solid var(--line);font-size:16px}
+.res .r:first-child{border-top:0}
+.res .r b{font-size:19px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.res .r.base{color:var(--ink2)}
+.res small{color:var(--muted);font-size:13px;margin-left:8px}
+.faq{max-width:820px;margin:36px auto 0}
+.faq details{border-top:1px solid var(--line);padding:4px 0}
+.faq details:last-child{border-bottom:1px solid var(--line)}
+.faq summary{list-style:none;cursor:pointer;font-size:19px;font-weight:600;letter-spacing:-.01em;padding:18px 34px 18px 0;position:relative}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';position:absolute;right:4px;top:13px;font-size:26px;font-weight:300;color:var(--ink2);transition:transform .2s ease}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq p{margin:0 0 20px;color:var(--ink2);font-size:16.5px;line-height:1.5;max-width:44em}
+@media(prefers-reduced-motion:reduce){.marq div{animation:none}}
 footer{border-top:1px solid var(--line);padding:26px 0 calc(26px + env(safe-area-inset-bottom,0px));color:var(--muted);font-size:12.5px;line-height:1.5}
 footer .wrap{display:flex;gap:10px 28px;flex-wrap:wrap;justify-content:space-between}
 .skel{color:var(--muted)}
@@ -148,7 +194,7 @@ footer .wrap{display:flex;gap:10px 28px;flex-wrap:wrap;justify-content:space-bet
 <body>
 <div class="nav"><div class="wrap">
   <a class="brand" href="#top"><i></i>Kronos Oracle</a>
-  <div class="links"><a class="m" href="#mood">Mood</a><a class="m" href="#spx">S&amp;P 500</a><a class="m" href="#league">Strategies</a><a class="m" href="#score">Scorecard</a><a class="pill sm" href="#signin" id="navBtn">Sign in</a></div>
+  <div class="links"><a class="m" href="#how">How it works</a><a class="m" href="#mood">Mood</a><a class="m" href="#spx">S&amp;P 500</a><a class="m" href="#league">Strategies</a><a class="m" href="#ask">Ask</a><a class="m" href="#score">Scorecard</a><a class="pill sm" href="#signin" id="navBtn">Sign in</a></div>
 </div></div>
 
 <main id="top">
@@ -169,6 +215,26 @@ footer .wrap{display:flex;gap:10px 28px;flex-wrap:wrap;justify-content:space-bet
     <div class="stat"><small>Fear and greed</small><b id="tMood" class="skel">—</b><span id="tMoodS">0 is maximum fear, 100 is maximum greed</span></div>
     <div class="stat"><small>S&amp;P 500, last session</small><b id="tSpx" class="skel">—</b><span id="tSpxS">&nbsp;</span></div>
     <div class="stat"><small>The kind of market this is</small><b id="tReg" class="word skel">—</b><span id="tRegS">&nbsp;</span></div>
+  </div>
+</section>
+
+<section class="wrap" aria-label="The work behind it">
+  <div class="counts">
+    <div class="count"><b id="c1" data-n="">—</b><span>big stocks read after every close</span></div>
+    <div class="count"><b id="c2" data-n="">—</b><span>years of prices every idea is tested on</span></div>
+    <div class="count"><b id="c3" data-n="">—</b><span>of its own calls graded so far</span></div>
+    <div class="count"><b id="c4" data-n="">—</b><span>strategies running on practice money</span></div>
+  </div>
+  <div class="marq" aria-hidden="true"><div id="marq"></div></div>
+</section>
+
+<section class="chapter wrap" id="how">
+  <h2>It works while you sleep.</h2>
+  <p class="lead">Three shifts, every trading day, with nothing for you to run.</p>
+  <div class="steps">
+    <div class="step"><div class="when">After the close</div><h3>It reads everything.</h3><p>Prices for the whole S&amp;P 500, news, insider filings, earnings dates, the economic calendar and what the crowd is saying.</p></div>
+    <div class="step"><div class="when">Overnight</div><h3>It checks itself.</h3><p>Yesterday's calls are graded, every strategy is re-run against ten years of prices, and AI analysts debate each stock on your list.</p></div>
+    <div class="step"><div class="when">Before the open</div><h3>It tells you.</h3><p>One brief in plain sentences: where things stand, what is on the calendar, what changed, and how much to trust it.</p></div>
   </div>
 </section>
 
@@ -233,6 +299,34 @@ footer .wrap{display:flex;gap:10px 28px;flex-wrap:wrap;justify-content:space-bet
   </div>
 </section>
 
+<section class="chapter wrap" id="calc">
+  <div class="split">
+    <div class="txt">
+      <h2>Run your own numbers.</h2>
+      <p class="lead">Pick an amount and how long ago you started. See what it would be worth today in each strategy, next to simply holding the S&amp;P 500.</p>
+    </div>
+    <div class="panel">
+      <div class="sl"><label for="kAmt">Starting amount <b id="kAmtV">$10,000</b></label><input id="kAmt" type="range" min="1000" max="100000" step="1000" value="10000"></div>
+      <div class="sl"><label for="kYrs">Started <b id="kYrsV">5 years ago</b></label><input id="kYrs" type="range" min="1" max="8" step="1" value="5"></div>
+      <div class="res" id="kRes"><span class="note">Loading strategies…</span></div>
+      <p class="note" style="margin:14px 0 0">From the app's backtest, after trading costs. Past results do not promise future ones, and tests of stock-picking strategies run flattering.</p>
+    </div>
+  </div>
+</section>
+
+<section class="chapter wrap" id="ask">
+  <div class="split flip">
+    <div class="txt">
+      <h2>Ask the desk anything.</h2>
+      <p class="lead">Plain questions, straight answers, worked out from today's numbers. Pick one.</p>
+    </div>
+    <div class="panel">
+      <div class="chat" id="chat" aria-live="polite"><div class="bub a">I read the market every day. What do you want to know?</div></div>
+      <div class="asks" id="asks"></div>
+    </div>
+  </div>
+</section>
+
 <section class="chapter wrap honest" id="score">
   <h2>It keeps score on itself.</h2>
   <p class="lead">Every call is written down before the outcome is known, then graded. The score is shown next to the laziest forecaster possible: one that says "up" every single time.</p>
@@ -253,6 +347,18 @@ footer .wrap{display:flex;gap:10px 28px;flex-wrap:wrap;justify-content:space-bet
     <div class="cell b2"><div><h3>Earnings moves</h3><p>How far each stock really moves after it reports.</p></div><div class="live" id="bEarn"></div></div>
     <div class="cell b3"><div><h3>AI research</h3><p>A team of AI analysts debates each stock on your list every night and lands on a rating, which is graded a week later.</p></div><div class="live" id="bRes"></div></div>
     <div class="cell b3"><div><h3>Live news and the crowd</h3><p>Headlines sorted into bullish and bearish as they land, plus the stocks WallStreetBets is talking about.</p></div><div class="live" id="bCrowd"></div></div>
+  </div>
+</section>
+
+<section class="chapter wrap" id="faq">
+  <h2 style="text-align:center">Questions, answered.</h2>
+  <div class="faq">
+    <details><summary>Is this financial advice?</summary><p>No. It is a research tool. Forecasts are estimates, they are often wrong, and the app shows its own track record so you can judge how much weight to give them.</p></details>
+    <details><summary>Where does the data come from?</summary><p>Public market prices, news feeds, SEC filings, published earnings dates, an economic calendar and public Reddit posts. Every page says where its numbers came from and when they were last updated.</p></details>
+    <details><summary>How often does it update?</summary><p>Prices and news refresh about every 30 minutes while the US market is open. The deeper work, such as grading calls and re-testing strategies, runs after each close.</p></details>
+    <details><summary>Does it trade real money?</summary><p>No. Every strategy runs on practice money with real prices. Nothing is bought or sold for you.</p></details>
+    <details><summary>Why does it admit when it is wrong?</summary><p>Because a forecast you cannot check is worth nothing. Each call is written down before the outcome is known and graded afterwards, next to what always guessing "up" would have scored.</p></details>
+    <details><summary>Who can use it?</summary><p>It is private and by invitation. If you have a login, sign in below.</p></details>
   </div>
 </section>
 
@@ -394,11 +500,61 @@ function drawScore(A){
   $('#aText').textContent = L.hit >= L.always_up ? 'So far the app is ahead of the lazy forecaster. The record is still short, and the scorecard inside shows exactly where it is right and wrong.' : 'So far the app has not beaten the lazy forecaster, and it says so on its own scorecard. Calls that kept failing have been switched off, and the record keeps building.';
 }
 
+/* counters that roll up when they scroll into view */
+function drawCounts(X, D, A){
+  const set = (id, n, fmt) => { const e = $(id); if (n == null) return; e.dataset.n = n; e.dataset.f = fmt || ''; e.textContent = '0'; cio.observe(e); };
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const show = (e, v) => { const f = e.dataset.f; e.textContent = f === 'y' ? v.toFixed(1) : Math.round(v).toLocaleString(); };
+  const cio = new IntersectionObserver(es => es.forEach(x => { if (!x.isIntersecting) return; cio.unobserve(x.target); const e = x.target, n = +e.dataset.n;
+    if (still){ show(e, n); return; } const t0 = performance.now(); const tick = t => { const k = Math.min(1, (t - t0)/1100), ease = 1 - Math.pow(1-k, 3); show(e, n*ease); if (k < 1) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }), {threshold:.4});
+  if (X && X.stocks) set('#c1', X.stocks);
+  if (D && D.start) set('#c2', (new Date(D.asof) - new Date(D.start))/31557600000, 'y');
+  if (A && A.log) set('#c3', A.log.n);
+  if (D && D.rows) set('#c4', D.rows.filter(r => r.kind !== 'Benchmark').length);
+}
+(function(){ const items = ['Daily brief','Fear and greed','S&P 500 breakdown','Market regime','Economic calendar','Stock terminal','Live news','Insider trades','Earnings moves','AI research','Strategy league','Practice accounts','WallStreetBets','Sector rotation','Filings lab','Report card'];
+  $('#marq').innerHTML = items.concat(items).map(t => `<span>${t}</span>`).join(''); })();
+
+/* what a starting amount became in each strategy */
+function drawCalc(D){
+  if (!D || !(D.rows||[]).length){ $('#kRes').innerHTML = '<span class="note">Appears after the next market close.</span>'; return; }
+  const base = D.rows.find(r => r.key === 'spy'), n = base.curve.length, maxY = Math.max(1, Math.min(8, Math.floor((n-1)/12)));
+  $('#kYrs').max = maxY; if (+$('#kYrs').value > maxY) $('#kYrs').value = maxY;
+  const money = v => '$' + Math.round(v).toLocaleString();
+  const out = () => { const amt = +$('#kAmt').value, y = +$('#kYrs').value, i = Math.max(0, n-1-12*y);
+    $('#kAmtV').textContent = money(amt); $('#kYrsV').textContent = y + (y === 1 ? ' year ago' : ' years ago');
+    const rows = D.rows.filter(r => r.key !== '6040').map(r => ({name:r.name, base:r.key==='spy', bias:r.bias, v: amt*r.curve[n-1]/r.curve[i]})).sort((a,b) => b.v-a.v), b = rows.find(r => r.base).v;
+    $('#kRes').innerHTML = rows.map(r => `<div class="r ${r.base?'base':''}"><span>${esc(r.name)}${r.bias?'<small>flattered</small>':''}</span><b class="${r.base || Math.abs(r.v/b-1) < 0.002 ? '' : r.v > b ? 'up' : 'dn'}">${money(r.v)}</b></div>`).join(''); };
+  $('#kAmt').oninput = out; $('#kYrs').oninput = out; out();
+}
+
+/* ask: every answer is computed from the data files loaded on this page */
+function drawAsk(DB){
+  const {F, X, G, A, D, C} = DB, Q = [];
+  if (F && F.score != null) Q.push(['How scared is the market?', () => ({t:`The fear and greed score is ${Math.round(F.score)} of 100: ${F.zone.toLowerCase()}. A week ago it was ${Math.round(F.week_ago)}, a month ago ${Math.round(F.month_ago)}.`, rows:(F.parts||[]).slice(0,3).map(p => [p.name, Math.round(p.score) + ' · ' + p.zone]), n:'The three most fearful gauges right now.'})]);
+  if (G && G.now) Q.push(['What kind of market is this?', () => ({t:G.text, rows:(G.rows||[]).map(r => [r.name, p0(r.share) + ' of days']), n:G.note})]);
+  if (F && F.after) Q.push(['What usually happens next?', () => { const r = F.after.rows.find(x => x.zone === F.zone), a = F.after.rows.find(x => x.zone === 'All days'); return {t:`After past ${F.zone.toLowerCase()} days, the S&P 500 was higher three months later ${p0(r.d63.up)} of the time.`, rows:[['One week later', sg(r.d5.avg)], ['One month later', sg(r.d21.avg)], ['Three months later', sg(r.d63.avg)], ['A typical three months', sg(a.d63.avg)]], n:'An average, not a promise. It can get worse first.'}; }]);
+  if (D && D.rows) Q.push(['Which strategy lost the least?', () => { const L = D.rows.filter(r => r.kind !== 'Benchmark' && r.invested > .3).sort((a,b) => b.all.dd - a.all.dd), s = D.rows.find(r => r.key === 'spy'); return {t:`${L[0].name}. Its worst drop was ${sg(L[0].all.dd, 0)}, against ${sg(s.all.dd, 0)} for holding the S&P 500.`, rows:L.slice(0,3).map(r => [r.name, sg(r.all.dd, 0) + ' worst, ' + sg(r.all.cagr) + ' a year']).concat([['S&P 500', sg(s.all.dd, 0) + ' worst, ' + sg(s.all.cagr) + ' a year']]), n:'Smaller drops usually cost some gain.'}; }]);
+  if (C && (C.events||[]).length) Q.push(['What moves markets this week?', () => { const ev = C.events.filter(e => e.impact === 'High').slice(0,4); const use = ev.length ? ev : C.events.slice(0,4); return {t:`${use.length} report${use.length === 1 ? '' : 's'} to watch.`, rows:use.map(e => [e.title, e.day + (e.time ? ' ' + e.time : '')]), n:use[0].why || 'Markets move when a number lands far from what was expected.'}; }]);
+  if (X && X.stats) Q.push(['Where is the S&P 500?', () => ({t:(X.insights||[])[0] || '', rows:[['Last session', sg(X.stats.d1, 2)], ['Five days', sg(X.stats.d5)], ['This year', sg(X.stats.ytd)], ['Stocks above their 50-day average', p0(X.internals && X.internals.above_50d)]], n:(X.insights||[])[1] || ''})]);
+  if (A && A.log) Q.push(['Is the app any good?', () => ({t:`Not proven yet. ${p0(A.log.hit)} of ${A.log.n.toLocaleString()} graded calls were right. Saying "up" every time would have scored ${p0(A.log.always_up)}.`, rows:(A.log.by_direction||[]).map(r => [r.key, p0(r.hit) + ' right']), n:`That record covers only ${A.log.days} trading days. The weakest kinds of calls have been switched off.`})]);
+  if (!Q.length) return;
+  const chat = $('#chat'), still = window.matchMedia('(prefers-reduced-motion: reduce)').matches; let timer = null;
+  const ask = i => { clearInterval(timer); const a = Q[i][1]();
+    chat.innerHTML = `<div class="bub q">${esc(Q[i][0])}</div><div class="bub a"><span id="typed"></span><div id="rows"></div></div>`;
+    const done = () => { $('#typed').textContent = a.t; $('#rows').innerHTML = a.rows.map(r => `<div class="row"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('') + (a.n ? `<div class="row" style="color:var(--ink2)"><span>${esc(a.n)}</span></div>` : ''); };
+    if (still) return done(); let k = 0; timer = setInterval(() => { k += 3; $('#typed').textContent = a.t.slice(0, k); if (k >= a.t.length){ clearInterval(timer); done(); } }, 16);
+    $('#asks').querySelectorAll('button').forEach((b, j) => b.classList.toggle('on', j === i)); };
+  $('#asks').innerHTML = Q.map((q, i) => `<button class="chip" data-i="${i}">${esc(q[0])}</button>`).join('');
+  const io = new IntersectionObserver(es => { if (es[0].isIntersecting){ io.disconnect(); ask(0); } }, {threshold:.5}); io.observe(chat);
+  $('#asks').querySelectorAll('button').forEach(b => b.onclick = () => { io.disconnect(); ask(+b.dataset.i); });
+}
+
 (async () => {
   const [B, F, X, G, A] = await Promise.all(['brief.json','feargreed.json','spx.json','regime.json','accuracy.json'].map(get));
   drawBrief(B); drawToday(F, X, G); drawMood(F); drawNext(F); drawSpx(X, F); drawScore(A);
   const [D, E, I, R, C, W] = await Promise.all(['strategies.json','earnings.json','insiders.json','research.json','econ.json','wsb.json'].map(get));
-  drawLeague(D);
+  drawLeague(D); drawCalc(D); drawCounts(X, D, A); drawAsk({F, X, G, A, D, C});
   if (I && I.headline) $('#bIns').textContent = I.headline;
   if (E && E.headline) $('#bEarn').textContent = E.headline[0].toUpperCase() + E.headline.slice(1);
   if (R && R.ratings){ const n = Object.keys(R.ratings).length; if (n) $('#bRes').textContent = `${n} stocks rated in the latest run.`; }
