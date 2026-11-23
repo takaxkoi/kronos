@@ -248,14 +248,14 @@ const meter = a => { const n = a.samples||0, up = Math.round((a.p_up||0)*n); let
 
 let LATEST = null, REPORT = null;
 const MENU = [
-  ['Markets', [['brief','Daily brief'],['today','Today'],['spx','S&P 500'],['fear','Fear and greed'],['calendar','Calendar'],['live','Live prices'],['market','Market map'],['scanner','S&P 500 scan'],['mscan','Market scan'],['other','Crypto, FX, gold']]],
+  ['Markets', [['brief','Daily brief'],['today','Today'],['crypto','Crypto'],['spx','S&P 500'],['fear','Fear and greed'],['calendar','Calendar'],['live','Live prices'],['market','Market map'],['scanner','S&P 500 scan'],['mscan','Market scan'],['other','Crypto, FX, gold']]],
   ['Stocks', [['term','Terminal'],['watch','Watchlist'],['earn','Earnings moves'],['insiders','Insider trades'],['research','AI research'],['lenses','Lenses']]],
   ['News and crowd', [['livenews','Live news'],['news','News mood'],['wsb','WallStreetBets']]],
   ['Labs', [['factor','Strategy test'],['edge','Edge Lab'],['filings','Filings Lab'],['perf','Performance'],['report','Report card'],['backtest','Backtest Lab']]],
   ['Account', [['league','Strategy league'],['paper','Paper trading'],['journal','Journal'],['setup','Setup']]],
 ];
 const TABS = MENU.flatMap(g => g[1]);
-const QUICK = [['brief','Brief'],['today','Today'],['spx','S&P 500'],['livenews','News']];
+const QUICK = [['brief','Brief'],['today','Today'],['spx','S&P 500'],['crypto','Crypto'],['livenews','News']];
 let LIVE_T = null;
 function menuOpen(open, focus){
   const m = $('#menu'), b = $('#menuBtn');
@@ -835,6 +835,203 @@ async function viewEdge(){
     series:[{type:'bar', name:'Rule', data:W.map(w => w.rule), itemStyle:{color:C.gold2, borderRadius:[3,3,0,0]}}, {type:'bar', name:'Buy and hold', data:W.map(w => w.buy_hold), itemStyle:{color:C.blue, borderRadius:[3,3,0,0]}}]}, 300);
 }
 
+/* ---------- Crypto: a CoinMarketCap-style board, live from CoinGecko in the browser ---------- */
+const CX = {data:null, coins:[], tab:'all', q:'', sort:'rank', dir:1, show:100, timer:null, live:null, newsSide:'all', newsCoin:null};
+const cxUsd = (x, big) => { if (x == null || isNaN(x)) return '—'; const a = Math.abs(x);
+  if (big || a >= 1e6) return '$' + (a >= 1e12 ? (x/1e12).toFixed(2)+'T' : a >= 1e9 ? (x/1e9).toFixed(2)+'B' : a >= 1e6 ? (x/1e6).toFixed(2)+'M' : a >= 1e3 ? (x/1e3).toFixed(1)+'K' : x.toFixed(0));
+  return '$' + (a >= 1000 ? x.toLocaleString(undefined,{maximumFractionDigits:2}) : a >= 1 ? x.toFixed(2) : a >= 0.01 ? x.toFixed(4) : a > 0 ? x.toPrecision(3) : '0'); };
+const cxPct = x => x == null || isNaN(x) ? '<span class="muted">—</span>' : `<span class="${x>0?'up':x<0?'dn':''}">${x>0?'▲':x<0?'▼':''} ${Math.abs(x).toFixed(Math.abs(x)>=100?0:2)}%</span>`;
+const cxNum = x => x == null ? '—' : x >= 1e9 ? (x/1e9).toFixed(2)+'B' : x >= 1e6 ? (x/1e6).toFixed(2)+'M' : x >= 1e3 ? (x/1e3).toFixed(1)+'K' : Math.round(x).toLocaleString();
+const cxImg = (u, s=22) => /^https:\/\/(assets|coin-images)\.coingecko\.com\//.test(u||'') ? `<img src="${esc(u)}" width="${s}" height="${s}" loading="lazy" alt="" style="border-radius:50%;flex:0 0 auto">` : `<span style="width:${s}px;height:${s}px;border-radius:50%;background:var(--panel2);display:inline-block;flex:0 0 auto"></span>`;
+function cxSpark(v, w=120, h=36){
+  if (!v || v.length < 2) return '';
+  const lo = Math.min(...v), hi = Math.max(...v), r = hi - lo || 1, up = v[v.length-1] >= v[0];
+  const pts = v.map((y,i) => `${(i/(v.length-1)*w).toFixed(1)},${(h-2-(y-lo)/r*(h-4)).toFixed(1)}`).join(' ');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${up?C.up:C.dn}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+}
+const cxWatch = () => new Set(store.get('cx_watch', ['BTC','ETH','SOL']));
+function cxCss(){
+  if ($('#cxcss')) return;
+  const s = document.createElement('style'); s.id = 'cxcss';
+  s.textContent = `.cx-strip{display:flex;gap:22px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);padding:2px 2px 14px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.cx-strip b{color:var(--ink);font-weight:700}.cx-live{display:inline-flex;align-items:center;gap:6px}.cx-live i{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 0 0 rgba(198,244,50,.6);animation:cxp 2s infinite}
+@keyframes cxp{0%{box-shadow:0 0 0 0 rgba(198,244,50,.55)}70%{box-shadow:0 0 0 8px rgba(198,244,50,0)}100%{box-shadow:0 0 0 0 rgba(198,244,50,0)}}
+.cx-top{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:10px}@media(max-width:1100px){.cx-top{grid-template-columns:1fr 1fr}}@media(max-width:640px){.cx-top{grid-template-columns:1fr}}
+.cx-mini{display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px;cursor:pointer}.cx-mini:first-of-type{border-top:0}
+.cx-mini .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cx-mini .nm span{color:var(--muted);font-size:12px;margin-left:4px}
+.cx-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.cx-tools input{flex:1;min-width:180px;min-height:42px;border-radius:21px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);padding:0 16px;font:inherit}
+table.cx{width:100%;border-collapse:collapse;font-size:13.5px}table.cx th{position:sticky;top:0;background:var(--panel);color:var(--muted);font-weight:600;font-size:12px;text-align:right;padding:10px 8px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none}
+table.cx th.l,table.cx td.l{text-align:left}table.cx td{padding:11px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}table.cx tbody tr{cursor:pointer}table.cx tbody tr:hover td{background:var(--panel2)}
+table.cx th.on{color:var(--ink)}.cx-coin{display:flex;align-items:center;gap:10px;min-width:180px}.cx-coin b{font-weight:700}.cx-coin span{color:var(--muted);font-size:12px}
+.cx-star{background:none;border:0;color:var(--line2);font-size:16px;cursor:pointer;padding:2px 4px}.cx-star.on{color:var(--gold)}
+.cx-sup{width:100px;height:4px;border-radius:2px;background:var(--line2);margin-top:5px;margin-left:auto}.cx-sup i{display:block;height:4px;border-radius:2px;background:var(--ink2)}
+.cx-k{font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;display:inline-block}.cx-k.u{background:rgba(198,244,50,.14);color:var(--up)}.cx-k.d{background:rgba(255,122,89,.14);color:var(--dn)}
+.cx-news{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}@media(max-width:900px){.cx-news{grid-template-columns:1fr}}
+.cx-n{background:var(--panel);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:7px;text-decoration:none;color:var(--ink);border:1px solid transparent}.cx-n:hover{border-color:var(--line2)}
+.cx-n .t{font-weight:600;line-height:1.35}.cx-n .m{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cx-side{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:6px}.cx-side.bull{background:rgba(198,244,50,.15);color:var(--up)}.cx-side.bear{background:rgba(255,122,89,.15);color:var(--dn)}.cx-side.neutral{background:var(--panel2);color:var(--muted)}
+.cx-tag{font-size:11px;font-weight:700;color:var(--ink2);background:var(--panel2);padding:2px 7px;border-radius:6px;cursor:pointer}
+.cx-ov{position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:80;display:flex;justify-content:flex-end}.cx-dr{width:min(760px,100%);height:100%;overflow-y:auto;background:var(--bg);padding:20px 20px 60px;border-left:1px solid var(--line2)}
+.cx-kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}@media(max-width:560px){.cx-kv{grid-template-columns:repeat(2,minmax(0,1fr))}}.cx-kv div{background:var(--panel);border-radius:12px;padding:10px 12px}.cx-kv small{display:block;color:var(--muted);font-size:11.5px;margin-bottom:3px}
+.cx-rng{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--dn),var(--ink2),var(--up));position:relative;margin:8px 0 4px}@media(max-width:700px){table.cx .hm{display:none}}@media(max-width:520px){table.cx .hp{display:none}.cx-coin b{max-width:110px;overflow:hidden;text-overflow:ellipsis}}@media(max-width:700px){table.cx td,table.cx th{padding:10px 5px}.cx-coin{min-width:0}.cx-coin span{display:none}}
+.cx-rng i{position:absolute;top:-4px;width:3px;height:14px;background:var(--ink);border-radius:2px}`;
+  document.head.appendChild(s);
+}
+async function cxLive(){
+  try {
+    const [m, g] = await Promise.all([
+      fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false&price_change_percentage=1h,24h,7d').then(r => r.ok ? r.json() : null),
+      fetch('https://api.coingecko.com/api/v3/global').then(r => r.ok ? r.json() : null)]);
+    if (!Array.isArray(m) || !m.length) return false;
+    const by = new Map(CX.coins.map(c => [c.id, c]));
+    for (const x of m){ const c = by.get(x.id); if (!c) continue;
+      Object.assign(c, {price:x.current_price, mcap:x.market_cap, vol:x.total_volume, rank:x.market_cap_rank, h24:x.high_24h, l24:x.low_24h, circ:x.circulating_supply,
+        c1h:x.price_change_percentage_1h_in_currency, c24h:x.price_change_percentage_24h_in_currency, c7d:x.price_change_percentage_7d_in_currency ?? c.c7d}); }
+    const gd = g && g.data; if (gd && CX.data){ Object.assign(CX.data.global, {mcap:gd.total_market_cap?.usd, vol:gd.total_volume?.usd, mcap_chg24:gd.market_cap_change_percentage_24h_usd,
+      dom:Object.fromEntries(Object.entries(gd.market_cap_percentage||{}).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([k,v])=>[k.toUpperCase(), +v.toFixed(2)]))}); }
+    CX.live = new Date(); return true;
+  } catch(e){ return false; }
+}
+function cxStrip(){
+  const g = (CX.data||{}).global || {}, fg = (CX.data.fear_greed||{}).now, d = g.dom || {};
+  return `<span class="cx-live"><i></i>${CX.live ? 'Live · ' + CX.live.toLocaleTimeString([], {hour:'numeric', minute:'2-digit', second:'2-digit'}) : 'Snapshot · ' + ago(CX.data.generated)}</span>
+    <span>Coins <b>${(g.coins||CX.coins.length).toLocaleString()}</b></span><span>Market cap <b>${cxUsd(g.mcap,1)}</b> ${cxPct(g.mcap_chg24)}</span><span>24h volume <b>${cxUsd(g.vol,1)}</b></span>
+    <span>Dominance <b>BTC ${d.BTC ?? '—'}%</b> · <b>ETH ${d.ETH ?? '—'}%</b></span>${fg ? `<span>Fear & Greed <b>${fg.value}/100</b> ${esc(fg.label||'')}</span>` : ''}`;
+}
+function cxList(){
+  const W = cxWatch(), K = ((CX.data||{}).kronos||{}).coins || {}, q = CX.q.trim().toLowerCase();
+  let L = CX.coins.filter(c => !q || (c.name||'').toLowerCase().includes(q) || (c.sym||'').toLowerCase().includes(q));
+  if (CX.tab === 'gain') L = L.filter(c => (c.vol||0) > 5e6 && c.c24h != null).sort((a,b) => b.c24h - a.c24h).slice(0, 50);
+  else if (CX.tab === 'lose') L = L.filter(c => (c.vol||0) > 5e6 && c.c24h != null).sort((a,b) => a.c24h - b.c24h).slice(0, 50);
+  else if (CX.tab === 'watch') L = L.filter(c => W.has(c.sym));
+  else if (CX.tab === 'kronos') L = L.filter(c => K[c.sym]);
+  if (CX.tab === 'all' || CX.tab === 'watch' || CX.tab === 'kronos' || CX.sort !== 'rank'){
+    const key = CX.sort, dr = CX.dir;
+    L = L.slice().sort((a,b) => { const x = key==='name' ? (a.name||'').localeCompare(b.name||'') : ((a[key] ?? -Infinity) > (b[key] ?? -Infinity) ? 1 : (a[key] ?? -Infinity) < (b[key] ?? -Infinity) ? -1 : 0); return key==='rank' ? x*dr : -x*dr; });
+  }
+  return L;
+}
+function cxRows(){
+  const W = cxWatch(), K = ((CX.data||{}).kronos||{}).coins || {}, L = cxList();
+  const body = L.slice(0, CX.show).map(c => { const k = K[c.sym], sup = c.max ? Math.min(1, (c.circ||0)/c.max) : null;
+    return `<tr data-id="${esc(c.id)}"><td class="l"><button class="cx-star ${W.has(c.sym)?'on':''}" data-s="${esc(c.sym)}" aria-label="Star ${esc(c.name)}">★</button></td><td class="l muted hp">${c.rank ?? '—'}</td>
+      <td class="l"><div class="cx-coin">${cxImg(c.img)}<b>${esc(c.name)}</b><span>${esc(c.sym)}</span></div></td><td><b>${cxUsd(c.price)}</b></td><td class="hm">${cxPct(c.c1h)}</td><td>${cxPct(c.c24h)}</td><td class="hp">${cxPct(c.c7d)}</td><td class="hm">${cxPct(c.c30d)}</td>
+      <td>${cxUsd(c.mcap,1)}</td><td class="hm">${cxUsd(c.vol,1)}<div class="sub" style="font-size:11px">${c.price ? cxNum(c.vol/c.price)+' '+esc(c.sym) : ''}</div></td>
+      <td class="hm">${cxNum(c.circ)} ${esc(c.sym)}${sup!=null?`<div class="cx-sup" title="${Math.round(sup*100)}% of max supply"><i style="width:${(sup*100).toFixed(0)}%"></i></div>`:''}</td>
+      <td class="hm">${k ? `<span class="cx-k ${k.dir==='up'?'u':'d'}" title="${k.agree}/${k.of} simulated futures agree">${k.dir==='up'?'▲ Up':'▼ Down'} · ${k.score}</span>` : '<span class="muted">—</span>'}</td><td class="hm">${cxSpark(c.spark, 100, 34)}</td></tr>`; }).join('');
+  $('#cxBody').innerHTML = body || '<tr><td colspan="13" class="l muted" style="padding:20px">No coins match.</td></tr>';
+  $('#cxMore').hidden = L.length <= CX.show;
+  $('#cxCount').textContent = `${Math.min(CX.show, L.length)} of ${L.length}`;
+  document.querySelectorAll('table.cx th[data-k]').forEach(th => th.classList.toggle('on', th.dataset.k === CX.sort));
+}
+function cxNews(){
+  const N = ((CX.data||{}).news||[]).filter(n => (CX.newsSide==='all' || n.side===CX.newsSide) && (!CX.newsCoin || (n.coins||[]).includes(CX.newsCoin)));
+  $('#cxNewsHead').innerHTML = CX.newsCoin ? `Showing ${esc(CX.newsCoin)} · <a href="#" id="cxNewsAll" style="color:var(--gold)">all coins</a>` : '';
+  $('#cxNews').innerHTML = N.slice(0, 40).map(n => `<a class="cx-n" href="${/^https?:\/\//.test(n.url)?esc(n.url):'#'}" target="_blank" rel="noopener noreferrer"><div class="t">${esc(n.title)}</div>
+    <div class="m"><span class="cx-side ${n.side}">${n.side==='bull'?'Bullish':n.side==='bear'?'Bearish':'Neutral'}</span><span>${esc(n.source)}</span><span>${n.time?ago(n.time):''}</span>${(n.coins||[]).map(s=>`<span class="cx-tag" data-c="${esc(s)}">${esc(s)}</span>`).join('')}</div></a>`).join('') || '<div class="sub">No stories match.</div>';
+  const a = $('#cxNewsAll'); if (a) a.onclick = e => { e.preventDefault(); CX.newsCoin = null; cxNews(); };
+  $('#cxNews').querySelectorAll('.cx-tag').forEach(t => t.onclick = e => { e.preventDefault(); e.stopPropagation(); CX.newsCoin = t.dataset.c; cxNews(); $('#cxNewsSec').scrollIntoView({behavior:'smooth'}); });
+}
+async function cxDrawer(id){
+  const c = CX.coins.find(x => x.id === id); if (!c) return;
+  const K = (((CX.data||{}).kronos||{}).coins||{})[c.sym], N = ((CX.data||{}).news||[]).filter(n => (n.coins||[]).includes(c.sym)).slice(0, 6);
+  const ov = document.createElement('div'); ov.className = 'cx-ov'; ov.id = 'cxOv';
+  const rng = (c.h24 && c.l24 && c.h24 > c.l24) ? Math.max(0, Math.min(1, (c.price - c.l24)/(c.h24 - c.l24))) : null;
+  ov.innerHTML = `<div class="cx-dr" role="dialog" aria-label="${esc(c.name)}"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div class="cx-coin">${cxImg(c.img,34)}<div><div style="font-size:22px;font-weight:700">${esc(c.name)} <span class="muted" style="font-size:14px">${esc(c.sym)} · #${c.rank ?? '—'}</span></div></div></div><button class="cx-star" id="cxClose" style="font-size:26px;color:var(--ink)" aria-label="Close">×</button></div>
+    <div style="display:flex;align-items:baseline;gap:12px;margin:14px 0 4px"><div class="hero" style="font-size:40px">${cxUsd(c.price)}</div><div style="font-size:16px">${cxPct(c.c24h)} <span class="muted" style="font-size:12px">24h</span></div></div>
+    ${rng!=null?`<div style="font-size:12px;color:var(--muted);display:flex;justify-content:space-between"><span>24h low ${cxUsd(c.l24)}</span><span>24h high ${cxUsd(c.h24)}</span></div><div class="cx-rng"><i style="left:calc(${(rng*100).toFixed(1)}% - 1px)"></i></div>`:''}
+    <div class="seg" id="cxDays" style="margin:14px 0 8px">${[['1','24H'],['7','7D'],['30','1M'],['90','3M'],['365','1Y'],['max','All']].map(([d,l],i)=>`<button data-d="${d}" class="${i===1?'on':''}">${l}</button>`).join('')}</div>
+    <div class="card" style="padding:10px"><div id="cxChart"></div></div>
+    ${K ? `<div class="sec-title" style="font-size:18px;margin-top:20px">Kronos forecast <small>${esc(K.asof||'')} · ${K.agree}/${K.of} simulated futures agree</small></div><div class="cx-kv">
+      <div><small>Direction</small><b class="${K.dir==='up'?'up':'dn'}">${K.dir==='up'?'▲ Up':'▼ Down'}</b> · score ${K.score}</div><div><small>Median move</small>${pct(K.median,2)}</div>
+      <div><small>Next hour range</small>${K.next?cxUsd(K.next.low)+' – '+cxUsd(K.next.high):'—'}</div><div><small>24h range</small>${K.day?cxUsd(K.day.low)+' – '+cxUsd(K.day.high):'—'}</div>
+      ${K.plan?`<div><small>Plan (${esc(K.plan.side)})</small>entry ${cxUsd(K.plan.entry)}</div><div><small>Stop / target</small>${cxUsd(K.plan.stop)} / ${cxUsd(K.plan.target)}</div>`:''}</div>
+      <div class="sub" style="margin-top:6px">Probabilities, not promises. Check the report card before acting on any call.</div>` : ''}
+    <div class="sec-title" style="font-size:18px;margin-top:20px">Stats</div><div class="cx-kv">
+      <div><small>Market cap</small>${cxUsd(c.mcap,1)}</div><div><small>Fully diluted value</small>${cxUsd(c.fdv,1)}</div><div><small>24h volume</small>${cxUsd(c.vol,1)}</div>
+      <div><small>Volume / market cap</small>${c.mcap?((c.vol||0)/c.mcap*100).toFixed(2)+'%':'—'}</div><div><small>Circulating supply</small>${cxNum(c.circ)}</div><div><small>Max supply</small>${c.max?cxNum(c.max):'∞'}</div>
+      <div><small>All-time high</small>${cxUsd(c.ath)} <span class="sub">${esc(c.ath_date||'')}</span></div><div><small>From all-time high</small>${cxPct(c.ath_pct)}</div><div><small>1 year</small>${cxPct(c.c1y)}</div></div>
+    ${N.length?`<div class="sec-title" style="font-size:18px;margin-top:20px">${esc(c.sym)} in the news</div><div style="display:flex;flex-direction:column;gap:8px">${N.map(n=>`<a class="cx-n" href="${/^https?:\/\//.test(n.url)?esc(n.url):'#'}" target="_blank" rel="noopener noreferrer"><div class="t">${esc(n.title)}</div><div class="m"><span class="cx-side ${n.side}">${n.side==='bull'?'Bullish':n.side==='bear'?'Bearish':'Neutral'}</span><span>${esc(n.source)}</span><span>${n.time?ago(n.time):''}</span></div></a>`).join('')}</div>`:''}
+    <div class="sub" style="margin-top:18px">Prices: CoinGecko. Not financial advice.</div></div>`;
+  document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+  let chart = null;
+  const close = () => { try { chart && chart.dispose(); } catch(e){} ov.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', esc_); };
+  const esc_ = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', esc_);
+  ov.onclick = e => { if (e.target === ov) close(); }; $('#cxClose').onclick = close;
+  const draw = async days => {
+    let pts = null;
+    try { const r = await fetch(`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(c.id)}/market_chart?vs_currency=usd&days=${days}`); if (r.ok) pts = (await r.json()).prices; } catch(e){}
+    if (!pts && days === '7' && c.spark?.length) { const n = c.spark.length, t0 = Date.now() - 7*864e5; pts = c.spark.map((p,i) => [t0 + i/(n-1)*7*864e5, p]); }
+    const el = $('#cxChart'); if (!el) return;
+    if (!pts || !pts.length){ el.innerHTML = '<div class="sub" style="padding:40px 10px;text-align:center">Chart unavailable right now (CoinGecko limit). Try again in a minute.</div>'; return; }
+    el.innerHTML = ''; el.style.height = '300px';
+    try { chart && chart.dispose(); } catch(e){}
+    const up = pts[pts.length-1][1] >= pts[0][1], col = up ? C.up : C.dn;
+    chart = echarts.init(el, null, {renderer:'canvas'});
+    chart.setOption({animation:false, grid:{left:8, right:8, top:10, bottom:8, containLabel:true}, tooltip:{trigger:'axis', valueFormatter:v => cxUsd(v)},
+      xAxis:{type:'time', axisLabel:{color:C.muted, fontSize:11}, axisLine:{lineStyle:{color:C.line}}, splitLine:{show:false}},
+      yAxis:{type:'value', scale:true, position:'right', axisLabel:{color:C.muted, fontSize:11, formatter:v => cxUsd(v)}, splitLine:{lineStyle:{color:C.line}}},
+      series:[{type:'line', data:pts, showSymbol:false, lineStyle:{color:col, width:2}, areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:col+'55'},{offset:1,color:col+'00'}])}}]});
+  };
+  $('#cxDays').onclick = e => { const b = e.target.closest('button'); if (!b) return; $('#cxDays').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); draw(b.dataset.d); };
+  draw('7');
+}
+function cxMini(L, f){ return L.map(c => `<div class="cx-mini" data-id="${esc(c.id||'')}">${cxImg(c.img,20)}<div class="nm">${esc(c.name)}<span>${esc(c.sym)}</span></div><div style="text-align:right">${f(c)}</div></div>`).join('') || '<div class="sub">—</div>'; }
+async function viewCrypto(){
+  cxCss(); clearInterval(CX.timer);
+  const D = await get('crypto.json');
+  if (!D || !(D.coins||[]).length){ $('#view').innerHTML = '<div class="empty">The crypto desk fills hourly. Run Actions → “Crypto desk” to fill it now.</div>'; return; }
+  CX.data = D; CX.coins = D.coins.map(c => Object.assign({}, c)); CX.live = null;
+  const liq = CX.coins.filter(c => (c.vol||0) > 5e6 && c.c24h != null), K = (D.kronos||{}).coins || {};
+  const fg = (D.fear_greed||{}).now, mood = D.news_mood || {};
+  const kr = Object.entries(K).map(([s,k]) => ({k, c:CX.coins.find(x => x.sym === s)})).filter(x => x.c).sort((a,b) => (b.k.score||0) - (a.k.score||0)).slice(0,5);
+  $('#view').innerHTML = `<div class="cx-strip" id="cxStrip">${cxStrip()}</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:0 2px 14px"><div><div style="font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.1">Crypto prices, news and forecasts</div>
+      <div class="sub" id="cxLede">The crypto market is worth ${cxUsd(D.global?.mcap,1)}, ${D.global?.mcap_chg24>=0?'up':'down'} ${Math.abs(D.global?.mcap_chg24||0).toFixed(2)}% in 24 hours.</div></div></div>
+    <div class="cx-top">
+      <div class="card"><h3>Fear & Greed</h3><div id="cxFg" style="height:130px"></div><div style="text-align:center;font-size:34px;font-weight:700;line-height:1;margin-top:2px">${fg?fg.value:'—'}<span class="muted" style="font-size:14px">/100</span></div><div class="sub" style="text-align:center;margin-top:4px">${fg?esc(fg.label):'—'} · news today ${mood.bull||0} bullish / ${mood.bear||0} bearish</div></div>
+      <div class="card"><h3>🔥 Trending</h3>${cxMini((D.trending||[]).slice(0,5), c => cxPct(c.c24h))}</div>
+      <div class="card"><h3>Top gainers · 24h</h3>${cxMini(liq.slice().sort((a,b)=>b.c24h-a.c24h).slice(0,5), c => `<div style="font-size:12px">${cxUsd(c.price)}</div>${cxPct(c.c24h)}`)}</div>
+      <div class="card"><h3>Kronos strongest calls</h3>${cxMini(kr.map(x=>x.c), c => `<span class="cx-k ${K[c.sym].dir==='up'?'u':'d'}">${K[c.sym].dir==='up'?'▲':'▼'} ${K[c.sym].score}</span>`)}</div>
+    </div>
+    <div class="sec-title">Market map <small>top 60 by market value · size = market cap · color = 24h change</small></div><div class="card" style="padding:8px"><div id="cxMap"></div></div>
+    <div class="sec-title">Prices <small id="cxCount"></small></div>
+    <div class="cx-tools"><div class="seg" id="cxTabs">${[['all','All'],['watch','★ Watchlist'],['gain','Gainers'],['lose','Losers'],['kronos','Kronos signals']].map(([k,l])=>`<button data-t="${k}" class="${CX.tab===k?'on':''}">${l}</button>`).join('')}</div><input id="cxQ" type="search" placeholder="Search coin or symbol" value="${esc(CX.q)}" aria-label="Search coins"></div>
+    <div class="card" style="padding:0 8px"><div class="tbl" style="margin:0"><table class="cx"><thead><tr><th class="l"></th><th class="l hp" data-k="rank">#</th><th class="l" data-k="name">Name</th><th data-k="price">Price</th><th data-k="c1h" class="hm">1h %</th><th data-k="c24h">24h %</th><th data-k="c7d" class="hp">7d %</th><th data-k="c30d" class="hm">30d %</th><th data-k="mcap">Market cap</th><th data-k="vol" class="hm">Volume (24h)</th><th data-k="circ" class="hm">Circulating supply</th><th class="hm">Kronos</th><th class="hm">Last 7 days</th></tr></thead><tbody id="cxBody"></tbody></table></div>
+      <button class="btn more" id="cxMore" style="margin:10px 0 12px">Show more</button></div>
+    <div class="sec-title" id="cxNewsSec">Crypto news <small>${(D.news||[]).length} stories, last 3 days · labels are keyword-based, a rough read</small></div>
+    <div class="cx-tools"><div class="seg" id="cxNs">${[['all','All'],['bull','Bullish'],['bear','Bearish']].map(([k,l])=>`<button data-s="${k}" class="${CX.newsSide===k?'on':''}">${l}</button>`).join('')}</div><div class="sub" id="cxNewsHead"></div></div>
+    <div class="cx-news" id="cxNews"></div>
+    <div class="sec-title">Sectors <small>largest crypto categories by market value</small></div><div class="card"><div class="tbl"><table><thead><tr><th>Sector</th><th class="n">Market cap</th><th class="n">24h</th><th class="n">Volume (24h)</th><th>Top coins</th></tr></thead><tbody>
+      ${(D.categories||[]).slice(0,20).map(s=>`<tr><td><b>${esc(s.name)}</b></td><td class="n">${cxUsd(s.mcap,1)}</td><td class="n">${cxPct(s.c24h)}</td><td class="n">${cxUsd(s.vol,1)}</td><td>${(s.top||[]).map(u=>cxImg(u,18)).join(' ')}</td></tr>`).join('')}</tbody></table></div></div>
+    <div class="sub" style="margin:16px 2px">Prices and sectors: CoinGecko. Fear & Greed: alternative.me. News: ${esc(((D.sources||{}).news||[]).join(', '))}. Forecasts: Kronos Oracle. Not financial advice.</div>`;
+  // fear & greed gauge
+  if (fg) ec('cxFg', {series:[{type:'gauge', startAngle:180, endAngle:0, min:0, max:100, radius:'120%', center:['50%','82%'], splitNumber:4,
+    axisLine:{lineStyle:{width:14, color:[[.25,C.dn],[.45,'#FFB547'],[.55,C.ink2],[.75,'#A8D85A'],[1,C.up]]}}, pointer:{length:'58%', width:4, itemStyle:{color:C.ink}},
+    axisTick:{show:false}, splitLine:{show:false}, axisLabel:{show:false}, detail:{show:false}, data:[{value:fg.value}]}]}, 130);
+  // market map
+  const top = CX.coins.filter(c => c.mcap).slice(0, 60);
+  const col = v => v == null ? C.panel : v >= 5 ? '#3F7D20' : v >= 2 ? '#4F8F2A' : v >= 0.5 ? '#3B5E2A' : v > -0.5 ? '#3A3A3A' : v > -2 ? '#7A3B2E' : v > -5 ? '#A6432F' : '#C9472F';
+  ec('cxMap', {tooltip:{formatter:p => `<b>${esc(p.data.n)}</b><br>${cxUsd(p.data.p)} · ${p.data.c==null?'—':(p.data.c>0?'+':'')+p.data.c.toFixed(2)+'%'}<br>Market cap ${cxUsd(p.data.value,1)}`},
+    series:[{type:'treemap', roam:false, nodeClick:false, breadcrumb:{show:false}, width:'100%', height:'100%', top:0, left:0, right:0, bottom:0,
+      label:{show:true, formatter:p => `{s|${p.data.s}}\n${p.data.c==null?'':(p.data.c>0?'+':'')+p.data.c.toFixed(1)+'%'}`, color:'#fff', fontSize:11, rich:{s:{fontSize:14, fontWeight:700, color:'#fff'}}},
+      itemStyle:{borderColor:C.panel, borderWidth:2, gapWidth:2}, data:top.map(c => ({name:c.sym, value:c.mcap, n:c.name, s:c.sym, p:c.price, c:c.c24h, id:c.id, itemStyle:{color:col(c.c24h)}}))}]}, 380);
+  const map = ECS[ECS.length-1]; if (map) map.on('click', p => p.data?.id && cxDrawer(p.data.id));
+  cxRows(); cxNews();
+  $('#cxTabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; CX.tab = b.dataset.t; CX.show = 100; if (CX.tab==='gain'||CX.tab==='lose') CX.sort = 'rank'; $('#cxTabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); cxRows(); };
+  $('#cxNs').onclick = e => { const b = e.target.closest('button'); if (!b) return; CX.newsSide = b.dataset.s; $('#cxNs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); cxNews(); };
+  let qt = null; $('#cxQ').oninput = e => { clearTimeout(qt); qt = setTimeout(() => { CX.q = e.target.value; CX.show = 100; cxRows(); }, 120); };
+  $('#cxMore').onclick = () => { CX.show += 100; cxRows(); };
+  document.querySelector('table.cx thead').onclick = e => { const th = e.target.closest('th[data-k]'); if (!th) return; const k = th.dataset.k; CX.dir = CX.sort === k ? -CX.dir : 1; CX.sort = k; cxRows(); };
+  $('#cxBody').onclick = e => { const s = e.target.closest('.cx-star'); if (s){ e.stopPropagation(); const W = cxWatch(); W.has(s.dataset.s) ? W.delete(s.dataset.s) : W.add(s.dataset.s); store.set('cx_watch', [...W]); cxRows(); return; }
+    const tr = e.target.closest('tr[data-id]'); if (tr) cxDrawer(tr.dataset.id); };
+  document.querySelectorAll('.cx-mini[data-id]').forEach(m => m.onclick = () => m.dataset.id && cxDrawer(m.dataset.id));
+  const tick = async () => { if (!$('#cxBody')) { clearInterval(CX.timer); return; } if (document.hidden || $('#cxOv')) return;
+    if (await cxLive()) { $('#cxStrip').innerHTML = cxStrip(); cxRows(); } };
+  tick(); CX.timer = setInterval(tick, 60000);
+}
+
 async function viewFactor(){
   const F = await get('factorlab.json');
   if (!F){ $('#view').innerHTML = '<div class="empty">The strategy test runs each weeknight with the Edge Lab. Run Actions → “Edge Lab + performance” to fill this now.</div>'; return; }
@@ -1271,7 +1468,7 @@ async function route(){
   const h = decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'brief';
   if (h.startsWith('t/')){ navRender(h.slice(2).toUpperCase()); try { await viewTicker(h.slice(2).toUpperCase()); } catch(e){ $('#view').innerHTML = `<span class="back" onclick="history.back()">Back</span><div class="empty">Couldn't show this ticker: ${esc(e.message)}</div>`; } window.scrollTo(0,0); return; }
   navRender(h); ecClear();
-  const fn = {calendar:viewCalendar, insiders:viewInsiders, earn:viewEarn, brief:viewBrief, fear:viewFear, spx:viewSpx, league:viewLeague, today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, mscan:viewMarketScan, live:viewLive, livenews:viewLiveNews, news:viewNews, wsb:viewWSB, filings:viewFilings, term:viewTerminal, lenses:viewLenses, edge:viewEdge, factor:viewFactor, perf:viewPerf, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewBrief;
+  const fn = {calendar:viewCalendar, insiders:viewInsiders, earn:viewEarn, brief:viewBrief, fear:viewFear, spx:viewSpx, league:viewLeague, today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, mscan:viewMarketScan, live:viewLive, livenews:viewLiveNews, news:viewNews, wsb:viewWSB, filings:viewFilings, term:viewTerminal, lenses:viewLenses, edge:viewEdge, factor:viewFactor, crypto:viewCrypto, perf:viewPerf, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewBrief;
   try { await fn(); } catch(e){ $('#view').innerHTML = `<div class="empty">Couldn't render this view: ${esc(e.message)}</div>`; }
 }
 let GATED = false;

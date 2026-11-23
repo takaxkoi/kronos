@@ -506,7 +506,7 @@ function drawCounts(X, D, A){
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const show = (e, v) => { const f = e.dataset.f; e.textContent = f === 'y' ? v.toFixed(1) : Math.round(v).toLocaleString(); };
   const cio = new IntersectionObserver(es => es.forEach(x => { if (!x.isIntersecting) return; cio.unobserve(x.target); const e = x.target, n = +e.dataset.n;
-    if (still){ show(e, n); return; } const t0 = performance.now(); const tick = t => { const k = Math.min(1, (t - t0)/1100), ease = 1 - Math.pow(1-k, 3); show(e, n*ease); if (k < 1) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }), {threshold:.4});
+    if (still){ show(e, n); return; } let t0 = null; const tick = t => { if (t0 === null) t0 = t; const k = Math.max(0, Math.min(1, (t - t0)/1100)), ease = 1 - Math.pow(1-k, 3); show(e, n*ease); if (k < 1) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }), {threshold:.4});
   if (X && X.stocks) set('#c1', X.stocks);
   if (D && D.start) set('#c2', (new Date(D.asof) - new Date(D.start))/31557600000, 'y');
   if (A && A.log) set('#c3', A.log.n);
