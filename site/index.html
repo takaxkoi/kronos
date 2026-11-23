@@ -69,6 +69,54 @@ h3{font-size:21px;line-height:1.2;letter-spacing:-.015em;font-weight:600;margin:
 .ln i.up{background:var(--lime)}.ln i.dn{background:var(--coral)}
 .fade{position:absolute;left:0;right:0;bottom:0;height:54px;background:linear-gradient(transparent,#141414);pointer-events:none;border-radius:0 0 44px 44px}
 .hint{margin-top:16px}
+/* more phones */
+.phones{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:40px -22px 0;padding:0 22px 8px}
+.phones::-webkit-scrollbar{display:none}
+.pcol{flex:0 0 min(300px,80vw);scroll-snap-align:center;text-align:center}
+.pcol .phone{width:100%;margin:0;animation:none;border-radius:48px;padding:10px;box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 30px 60px -20px rgba(0,0,0,.9)}
+.pcol .screen{height:540px;border-radius:39px}
+.pcol .fade{border-radius:0 0 39px 39px}
+.pcol .island{width:84px;height:25px;margin:9px auto 4px}
+.pcol h3{margin-top:20px}
+.pcol>p{margin:6px auto 0;color:var(--ink2);font-size:15.5px;line-height:1.4;max-width:17em}
+@media(min-width:1100px){.phones{overflow:visible;margin:48px 0 0;padding:0;justify-content:space-between;gap:16px}.pcol{flex:0 0 calc(25% - 12px)}}
+.scroll .big1{font-size:64px;font-weight:700;letter-spacing:-.06em;line-height:1;margin:8px 0 2px}
+.scroll .zone{font-size:17px;font-weight:700;letter-spacing:-.02em}
+.row2{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-top:1px solid #2E2E2E;font-size:13.5px;line-height:1.3;cursor:pointer}
+.row2:first-child{border-top:0}
+.row2 b{font-size:16px;letter-spacing:-.02em;white-space:nowrap}
+.row2 small{display:block;color:var(--ink2);font-size:11.5px;margin-top:2px}
+.row2 .more{display:none;color:var(--ink2);font-size:12px;line-height:1.4;margin-top:6px}
+.row2.open .more{display:block}
+.mseg{display:flex;background:#1E1E1E;border-radius:999px;padding:3px;margin:10px 0 8px}
+.mseg button{flex:1;border:0;background:transparent;color:var(--ink2);min-height:30px;border-radius:999px;font-size:12.5px;font-weight:600;cursor:pointer}
+.mseg button.on{background:var(--ink);color:#000}
+.tag{display:inline-block;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;background:#2E2E2E;color:var(--ink)}
+.tag.up{background:var(--lime);color:#0B0B0B}.tag.dn{background:var(--coral);color:#0B0B0B}
+/* pricing */
+.bill{display:flex;justify-content:center;margin-top:26px}
+.plans{display:grid;gap:12px;margin-top:28px}
+@media(min-width:860px){.plans{grid-template-columns:repeat(3,1fr)}}
+.plan{background:var(--panel);border-radius:32px;padding:28px;display:flex;flex-direction:column;border:1px solid transparent}
+.plan.pop{border-color:var(--lime)}
+.plan .badge{align-self:flex-start;background:var(--lime);color:#0B0B0B;font-size:12.5px;font-weight:700;border-radius:999px;padding:4px 11px;margin-bottom:12px}
+.plan h3{font-size:26px;letter-spacing:-.02em}
+.plan .for{color:var(--ink2);font-size:15.5px;margin:6px 0 0;line-height:1.4}
+.plan .price{font-size:60px;font-weight:700;letter-spacing:-.05em;line-height:1;margin:22px 0 4px;font-variant-numeric:tabular-nums}
+.plan .price small{font-size:18px;font-weight:500;letter-spacing:0;color:var(--ink2)}
+.plan .per{font-size:14px;color:var(--ink2);min-height:21px}
+.plan .pill{margin:20px 0 6px;width:100%}
+.plan .pill.alt{background:var(--panel2);color:var(--ink)}
+.plan ul{list-style:none;margin:14px 0 0;padding:0}
+.plan li{padding:9px 0 9px 26px;border-top:1px solid var(--line);font-size:15.5px;line-height:1.4;position:relative}
+.plan li::before{content:'';position:absolute;left:4px;top:15px;width:10px;height:6px;border-left:2px solid var(--lime);border-bottom:2px solid var(--lime);transform:rotate(-45deg)}
+.req{max-width:560px;margin:28px auto 0;display:none}
+.req.show{display:block}
+.req form{padding:26px}
+.req .two{display:grid;gap:0 12px}
+@media(min-width:560px){.req .two{grid-template-columns:1fr 1fr}}
+textarea{width:100%;min-height:84px;border-radius:14px;border:1px solid var(--line);background:#000;color:var(--ink);font:400 17px var(--font);padding:12px 14px;resize:vertical}
+textarea:focus{outline:none;border-color:var(--lime)}
 @keyframes rise{from{opacity:0;transform:translateY(40px) scale(.97)}to{opacity:1;transform:none}}
 
 /* today strip */
@@ -194,7 +242,7 @@ footer .wrap{display:flex;gap:10px 28px;flex-wrap:wrap;justify-content:space-bet
 <body>
 <div class="nav"><div class="wrap">
   <a class="brand" href="#top"><i></i>Kronos Oracle</a>
-  <div class="links"><a class="m" href="#how">How it works</a><a class="m" href="#mood">Mood</a><a class="m" href="#spx">S&amp;P 500</a><a class="m" href="#league">Strategies</a><a class="m" href="#ask">Ask</a><a class="m" href="#score">Scorecard</a><a class="pill sm" href="#signin" id="navBtn">Sign in</a></div>
+  <div class="links"><a class="m" href="#how">How it works</a><a class="m" href="#mood">Mood</a><a class="m" href="#spx">S&amp;P 500</a><a class="m" href="#league">Strategies</a><a class="m" href="#ask">Ask</a><a class="m" href="#score">Scorecard</a><a class="m" href="#pricing">Pricing</a><a class="pill sm" href="#signin" id="navBtn">Sign in</a></div>
 </div></div>
 
 <main id="top">
@@ -235,6 +283,17 @@ footer .wrap{display:flex;gap:10px 28px;flex-wrap:wrap;justify-content:space-bet
     <div class="step"><div class="when">After the close</div><h3>It reads everything.</h3><p>Prices for the whole S&amp;P 500, news, insider filings, earnings dates, the economic calendar and what the crowd is saying.</p></div>
     <div class="step"><div class="when">Overnight</div><h3>It checks itself.</h3><p>Yesterday's calls are graded, every strategy is re-run against ten years of prices, and AI analysts debate each stock on your list.</p></div>
     <div class="step"><div class="when">Before the open</div><h3>It tells you.</h3><p>One brief in plain sentences: where things stand, what is on the calendar, what changed, and how much to trust it.</p></div>
+  </div>
+</section>
+
+<section class="chapter wrap" id="app">
+  <h2>Pick it up. It is all in your pocket.</h2>
+  <p class="lead">Four screens from the app, running on today's numbers. Scroll and tap inside each one.</p>
+  <div class="phones">
+    <div class="pcol"><div class="phone"><div class="screen"><div class="island"></div><div class="scroll" id="ph1"><p class="sm skel">Loading…</p></div><div class="fade"></div></div></div><h3>Fear and greed</h3><p>The mood in one number. Tap a gauge to see how it is measured.</p></div>
+    <div class="pcol"><div class="phone"><div class="screen"><div class="island"></div><div class="scroll" id="ph2"><p class="sm skel">Loading…</p></div><div class="fade"></div></div></div><h3>S&amp;P 500</h3><p>Sectors by day, week or month, and the biggest movers.</p></div>
+    <div class="pcol"><div class="phone"><div class="screen"><div class="island"></div><div class="scroll" id="ph3"><p class="sm skel">Loading…</p></div><div class="fade"></div></div></div><h3>Strategy league</h3><p>Seven practice accounts. Tap one for its rule.</p></div>
+    <div class="pcol"><div class="phone"><div class="screen"><div class="island"></div><div class="scroll" id="ph4"><p class="sm skel">Loading…</p></div><div class="fade"></div></div></div><h3>AI research</h3><p>A rating for every stock on the list, redone every night.</p></div>
   </div>
 </section>
 
@@ -350,6 +409,31 @@ footer .wrap{display:flex;gap:10px 28px;flex-wrap:wrap;justify-content:space-bet
   </div>
 </section>
 
+<section class="chapter wrap" id="pricing">
+  <h2 style="text-align:center">Pick your desk.</h2>
+  <p class="lead" style="margin-left:auto;margin-right:auto;text-align:center">Three plans, one flat price each. No payment is taken on this page: request access and you will hear back.</p>
+  <div class="bill"><div class="seg" id="billSeg" style="margin-top:0"><button data-v="monthly" class="on">Monthly</button><button data-v="annual">Annual, 2 months free</button></div></div>
+  <div class="plans">
+    <div class="plan"><h3>Basic</h3><p class="for">The morning read.</p><div class="price" data-m="10" data-y="100">$10<small> a month</small></div><div class="per">&nbsp;</div><button class="pill alt" data-plan="Basic">Choose Basic</button>
+      <ul><li>Daily brief, refreshed through the day</li><li>Fear and greed score with its history</li><li>S&amp;P 500 breakdown and market regime</li><li>Economic calendar</li><li>Live prices</li><li>The report card</li></ul></div>
+    <div class="plan pop"><span class="badge">Most popular</span><h3>Pro</h3><p class="for">The full desk for following stocks.</p><div class="price" data-m="40" data-y="400">$40<small> a month</small></div><div class="per">&nbsp;</div><button class="pill" data-plan="Pro">Choose Pro</button>
+      <ul><li>Everything in Basic</li><li>Stock terminal for every S&amp;P 500 company</li><li>Live news sorted bullish and bearish</li><li>WallStreetBets tracker</li><li>Insider trades and earnings moves</li><li>Strategy league with practice accounts</li><li>Forecasts and trade ideas</li></ul></div>
+    <div class="plan"><h3>Max</h3><p class="for">Everything, including the labs.</p><div class="price" data-m="100" data-y="1000">$100<small> a month</small></div><div class="per">&nbsp;</div><button class="pill alt" data-plan="Max">Choose Max</button>
+      <ul><li>Everything in Pro</li><li>AI research ratings, redone every night</li><li>Overnight scan of all 500 stocks</li><li>Strategy test, Edge lab and Filings lab</li><li>Crypto desk</li><li>Lens scores for every stock</li></ul></div>
+  </div>
+  <div class="req" id="req">
+    <form id="reqForm">
+      <h3 id="reqTitle">Request access</h3>
+      <p class="note" id="reqSub" style="margin:6px 0 0"></p>
+      <div class="two"><div><label for="rName">Your name</label><input id="rName" type="text" autocomplete="name" maxlength="80" required></div><div><label for="rEmail">Email</label><input id="rEmail" type="email" autocomplete="email" maxlength="160" required></div></div>
+      <label for="rNote">Anything we should know? (optional)</label><textarea id="rNote" maxlength="500"></textarea>
+      <button class="pill" type="submit" id="rSubmit">Request access</button>
+      <div class="msg" id="rMsg" role="status"></div>
+      <p class="note" style="margin:8px 0 0">No payment today. You will get a reply with the next step.</p>
+    </form>
+  </div>
+</section>
+
 <section class="chapter wrap" id="faq">
   <h2 style="text-align:center">Questions, answered.</h2>
   <div class="faq">
@@ -358,7 +442,9 @@ footer .wrap{display:flex;gap:10px 28px;flex-wrap:wrap;justify-content:space-bet
     <details><summary>How often does it update?</summary><p>Prices and news refresh about every 30 minutes while the US market is open. The deeper work, such as grading calls and re-testing strategies, runs after each close.</p></details>
     <details><summary>Does it trade real money?</summary><p>No. Every strategy runs on practice money with real prices. Nothing is bought or sold for you.</p></details>
     <details><summary>Why does it admit when it is wrong?</summary><p>Because a forecast you cannot check is worth nothing. Each call is written down before the outcome is known and graded afterwards, next to what always guessing "up" would have scored.</p></details>
-    <details><summary>Who can use it?</summary><p>It is private and by invitation. If you have a login, sign in below.</p></details>
+    <details><summary>How do I get in?</summary><p>Pick a plan above and request access. Logins are turned on by hand, usually within a day. If you already have one, sign in below.</p></details>
+    <details><summary>How do I pay?</summary><p>Nothing is charged on this page. After you request access you get a reply with the price you picked and how to pay. Annual plans cost ten months instead of twelve.</p></details>
+    <details><summary>Can I change plans?</summary><p>Yes. Ask to move up or down at any time.</p></details>
   </div>
 </section>
 
@@ -500,6 +586,39 @@ function drawScore(A){
   $('#aText').textContent = L.hit >= L.always_up ? 'So far the app is ahead of the lazy forecaster. The record is still short, and the scorecard inside shows exactly where it is right and wrong.' : 'So far the app has not beaten the lazy forecaster, and it says so on its own scorecard. Calls that kept failing have been switched off, and the record keeps building.';
 }
 
+/* four more phones, each drawn from the same live files the app uses */
+function drawPhones(F, X, D, R){
+  const tap = root => root.querySelectorAll('.row2').forEach(e => e.onclick = () => e.classList.toggle('open'));
+  if (F && F.score != null){
+    $('#ph1').innerHTML = `<div class="day">As of the close on ${nice(F.asof)}</div><div class="big1 ${zc(F.score)}">${Math.round(F.score)}</div><div class="zone">${esc(F.zone)}</div>
+      <div class="tiles" style="margin-top:12px">${[['A week ago', F.week_ago], ['A month ago', F.month_ago]].map(([l,v]) => `<div class="tile"><small>${l}</small><b class="${zc(v)}">${Math.round(v)}</b><span>${zoneOf(v)}</span></div>`).join('')}</div>
+      <div class="sec">What is driving it</div><div class="box">${(F.parts||[]).map(p => `<div class="row2"><span>${esc(p.name)}<small>${esc(p.now)}</small><span class="more">${esc(p.why)}</span></span><b class="${zc(p.score)}">${Math.round(p.score)}</b></div>`).join('')}</div>`;
+    tap($('#ph1'));
+  }
+  if (X && X.stats){ const S = X.stats; let per = 'd1', side = 'up';
+    const draw = () => { const sec = X.sectors.slice().sort((a,b) => (b[per]||0)-(a[per]||0)), mv = (X.movers[per === 'ytd' ? 'd21' : per] || {})[side] || [];
+      $('#ph2').innerHTML = `<div class="day">S&amp;P 500 fund, close of ${nice(S.date)}</div><div class="hd">${S.last.toFixed(2)}, ${S.from_high < -0.002 ? Math.abs(S.from_high*100).toFixed(1) + '% below its record' : 'at a record'}</div>
+        <div class="tiles">${[['Last day', S.d1, 2], ['Five days', S.d5, 1], ['One month', S.d21, 1], ['This year', S.ytd, 1]].map(([l,v,d]) => `<div class="tile"><small>${l}</small><b class="${cl(v)}" style="font-size:22px">${sg(v,d)}</b></div>`).join('')}</div>
+        <div class="sec">Sectors</div><div class="mseg" data-k="per">${[['d1','Day'],['d5','Week'],['d21','Month']].map(([v,l]) => `<button data-v="${v}" class="${v===per?'on':''}">${l}</button>`).join('')}</div>
+        <div class="box">${sec.map(r => `<div class="row2" style="cursor:default"><span>${esc(r.name)}</span><b class="${cl(r[per])}">${sg(r[per])}</b></div>`).join('')}</div>
+        <div class="sec">Biggest movers</div><div class="mseg" data-k="side">${[['up','Risers'],['down','Fallers']].map(([v,l]) => `<button data-v="${v}" class="${v===side?'on':''}">${l}</button>`).join('')}</div>
+        <div class="box">${mv.slice(0,6).map(r => `<div class="row2" style="cursor:default"><span>${esc(r.t)}<small>${esc(r.name||'')}</small></span><b class="${cl(r.v)}">${sg(r.v)}</b></div>`).join('')}</div>`;
+      $('#ph2').querySelectorAll('.mseg button').forEach(b => b.onclick = () => { const top = $('#ph2').scrollTop; if (b.parentNode.dataset.k === 'per') per = b.dataset.v; else side = b.dataset.v; draw(); $('#ph2').scrollTop = top; }); };
+    draw();
+  }
+  if (D && (D.rows||[]).length){ const money = v => '$' + Math.round(v).toLocaleString();
+    $('#ph3').innerHTML = `<div class="day">Practice accounts since ${nice(D.live_from)}</div><div class="hd">Seven strategies, $100,000 each</div><p class="sm">Fake money, real prices.</p>
+      <div class="box">${D.rows.map(r => `<div class="row2"><span>${esc(r.name)}<small>${r.holdings.length ? 'Holds ' + r.holdings.slice(0,3).map(h => esc(h.ticker)).join(', ') + (r.holdings.length > 3 ? ' and ' + (r.holdings.length-3) + ' more' : '') : 'All in cash'}</small><span class="more">${esc(r.rule)} Tested: ${sg(r.all.cagr)} a year, worst drop ${sg(r.all.dd,0)}.</span></span><span style="text-align:right"><b>${money(r.live.equity)}</b><small class="${cl(r.live.return)}">${r.live.days ? sg(r.live.return, 2) : 'starting'}</small></span></div>`).join('')}</div>`;
+    tap($('#ph3'));
+  }
+  if (R && R.ratings && Object.keys(R.ratings).length){ const rank = {'Buy':0,'Overweight':1,'Hold':2,'Underweight':3,'Sell':4}, tone = r => ['Buy','Overweight'].includes(r) ? 'up' : ['Sell','Underweight'].includes(r) ? 'dn' : '';
+    const rows = Object.values(R.ratings).sort((a,b) => (rank[a.rating] ?? 2) - (rank[b.rating] ?? 2));
+    $('#ph4').innerHTML = `<div class="day">Latest run, ${nice(rows[0].date)}</div><div class="hd">${rows.length} stocks, debated overnight</div><p class="sm">Four AI analysts write reports, a bull and a bear argue, and a manager lands on a rating. Each one is graded a week later.</p>
+      <div class="box">${rows.map(r => `<div class="row2"><span><b>${esc(r.ticker)}</b><small>at $${(+r.price).toFixed(2)}${r.horizon ? ', ' + esc(r.horizon) : ''}</small><span class="more">Sign in to read the full report and the debate behind this rating.</span></span><span class="tag ${tone(r.rating)}">${esc(r.rating)}</span></div>`).join('')}</div>`;
+    tap($('#ph4'));
+  }
+}
+
 /* counters that roll up when they scroll into view */
 function drawCounts(X, D, A){
   const set = (id, n, fmt) => { const e = $(id); if (n == null) return; e.dataset.n = n; e.dataset.f = fmt || ''; e.textContent = '0'; cio.observe(e); };
@@ -554,13 +673,31 @@ function drawAsk(DB){
   const [B, F, X, G, A] = await Promise.all(['brief.json','feargreed.json','spx.json','regime.json','accuracy.json'].map(get));
   drawBrief(B); drawToday(F, X, G); drawMood(F); drawNext(F); drawSpx(X, F); drawScore(A);
   const [D, E, I, R, C, W] = await Promise.all(['strategies.json','earnings.json','insiders.json','research.json','econ.json','wsb.json'].map(get));
-  drawLeague(D); drawCalc(D); drawCounts(X, D, A); drawAsk({F, X, G, A, D, C});
+  drawLeague(D); drawCalc(D); drawCounts(X, D, A); drawAsk({F, X, G, A, D, C}); drawPhones(F, X, D, R);
   if (I && I.headline) $('#bIns').textContent = I.headline;
   if (E && E.headline) $('#bEarn').textContent = E.headline[0].toUpperCase() + E.headline.slice(1);
   if (R && R.ratings){ const n = Object.keys(R.ratings).length; if (n) $('#bRes').textContent = `${n} stocks rated in the latest run.`; }
   if (C && (C.events||[]).length){ const e = C.events.find(x => x.impact === 'High') || C.events[0]; $('#bCal').textContent = `Next: ${e.title}, ${e.day}${e.time ? ' at ' + e.time : ''}.`; }
   if (W && (W.tickers||[]).length){ const t = W.tickers.filter(x => x.ticker).slice(0,3).map(x => x.ticker); if (t.length) $('#bCrowd').textContent = `Most talked about right now: ${t.join(', ')}.`; }
 })();
+
+/* pricing: billing toggle and the access request */
+let BILL = 'monthly', PLAN = null;
+const prices = () => document.querySelectorAll('.plan .price').forEach(e => { const y = BILL === 'annual';
+  e.innerHTML = '$' + (+(y ? e.dataset.y : e.dataset.m)).toLocaleString() + `<small> a ${y ? 'year' : 'month'}</small>`;
+  e.nextElementSibling.textContent = y ? 'Works out to $' + (e.dataset.y/12).toFixed(2) + ' a month' : '\u00a0'; });
+const reqSub = () => { if (!PLAN) return; const e = document.querySelector(`.plan [data-plan="${PLAN}"]`).parentNode.querySelector('.price'), y = BILL === 'annual';
+  $('#reqTitle').textContent = 'Request ' + PLAN; $('#reqSub').textContent = `$${(+(y ? e.dataset.y : e.dataset.m)).toLocaleString()} a ${y ? 'year' : 'month'}, billed ${y ? 'annually' : 'monthly'}.`; };
+seg('#billSeg', v => { BILL = v; prices(); reqSub(); });
+document.querySelectorAll('.plan [data-plan]').forEach(b => b.onclick = () => { PLAN = b.dataset.plan; reqSub(); $('#req').classList.add('show'); $('#rMsg').textContent = ''; $('#req').scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(() => $('#rName').focus({preventScroll:true}), 450); });
+$('#reqForm').addEventListener('submit', async e => {
+  e.preventDefault(); const m = $('#rMsg'); if (!PLAN) return;
+  $('#rSubmit').disabled = true; m.className = 'msg'; m.textContent = 'Sending…';
+  const { error } = await sb.from('oracle_access_requests').insert({ name: $('#rName').value.trim(), email: $('#rEmail').value.trim().toLowerCase(), plan: PLAN, billing: BILL, note: $('#rNote').value.trim() || null });
+  $('#rSubmit').disabled = false;
+  if (error){ m.className = 'msg err'; m.textContent = 'That did not go through. Check your email address and try again.'; return; }
+  m.className = 'msg ok'; m.textContent = 'You are on the list. You will hear back within a day.'; $('#reqForm').reset();
+});
 
 /* sign in */
 const msg = (t, c='') => { const m = $('#msg'); m.textContent = t; m.className = 'msg ' + c; };

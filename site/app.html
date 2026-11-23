@@ -252,7 +252,7 @@ const MENU = [
   ['Stocks', [['term','Terminal'],['watch','Watchlist'],['earn','Earnings moves'],['insiders','Insider trades'],['research','AI research'],['lenses','Lenses']]],
   ['News and crowd', [['livenews','Live news'],['news','News mood'],['wsb','WallStreetBets']]],
   ['Labs', [['factor','Strategy test'],['edge','Edge Lab'],['filings','Filings Lab'],['perf','Performance'],['report','Report card'],['backtest','Backtest Lab']]],
-  ['Account', [['league','Strategy league'],['paper','Paper trading'],['journal','Journal'],['setup','Setup']]],
+  ['Account', [['league','Strategy league'],['paper','Paper trading'],['journal','Journal'],['requests','Access requests'],['setup','Setup']]],
 ];
 const TABS = MENU.flatMap(g => g[1]);
 const QUICK = [['brief','Brief'],['today','Today'],['spx','S&P 500'],['crypto','Crypto'],['livenews','News']];
@@ -1445,6 +1445,16 @@ function regimeHTML(G){
   return `<div class="sec-title">What kind of market this is<small>${dateS(G.first)} to now. The row for today is highlighted.</small></div><div class="card"><p style="margin:0 0 12px;font-size:16px;line-height:1.5">${esc(G.text)} ${esc(G.note)}</p>${G.rows.map(r => `<div class="idea" style="${r.name===G.now?'background:rgba(198,244,50,.08);margin:0 -12px;padding:12px;border-radius:14px':''}"><span><b>${esc(r.name)}</b><small style="display:block;color:var(--muted);line-height:1.4">${esc(r.rule)} ${pct0(r.share)} of days. Did best over the next month: ${r.worked.slice(0,2).map(w => esc(w.name.toLowerCase()) + ' ' + sgn(w.month)).join(', ')}.</small></span><span style="text-align:right"><span class="big ${cls(r.d63.avg)}">${sgn(r.d63.avg)}</span><small style="display:block;color:var(--muted);white-space:nowrap">3 months later<br>up ${pct0(r.d63.up)}</small></span></div>`).join('')}<div class="sub" style="margin-top:10px">${esc(G.caveat)}</div></div>`;
 }
 
+async function viewRequests(){
+  const { data, error } = await sb.from('oracle_access_requests').select('*').order('created_at', {ascending:false}).limit(200);
+  if (error){ $('#view').innerHTML = `<div class="empty">Could not load requests: ${esc(error.message)}</div>`; return; }
+  const rows = data || [], price = {Basic:[10,100], Pro:[40,400], Max:[100,1000]};
+  const monthly = rows.reduce((a, r) => a + (price[r.plan] ? (r.billing === 'annual' ? price[r.plan][1]/12 : price[r.plan][0]) : 0), 0);
+  let h = `<div class="lede"><h1>${rows.length ? rows.length + ' access request' + (rows.length === 1 ? '' : 's') : 'No access requests yet.'}</h1><p>${rows.length ? 'People who picked a plan on the landing page, newest first. Nobody has been charged and nobody has a login until you add one. If all of them paid, that would be about $' + Math.round(monthly).toLocaleString() + ' a month.' : 'When someone picks a plan on the landing page and sends the form, they show up here.'}</p></div>`;
+  if (rows.length) h += `<div class="card">${rows.map(r => `<div class="idea"><span><b>${esc(r.name)}</b><small style="display:block;color:var(--muted);line-height:1.4"><a href="mailto:${esc(r.email)}">${esc(r.email)}</a> · ${ago(r.created_at)}${r.note ? '<br>' + esc(r.note) : ''}</small></span><span style="text-align:right"><span class="big" style="font-size:18px">${esc(r.plan)}</span><small style="display:block;color:var(--muted)">${esc(r.billing)}</small></span></div>`).join('')}</div>`;
+  $('#view').innerHTML = h;
+}
+
 async function viewSetup(){
   $('#view').innerHTML = `<div class="grid g2"><div class="card"><h3>Go-live checklist</h3><ol class="steps">
     <li><b>Turn on Actions.</b> GitHub → your kronos repo → <b>Actions</b> tab → “I understand my workflows, enable them”.</li>
@@ -1468,7 +1478,7 @@ async function route(){
   const h = decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'brief';
   if (h.startsWith('t/')){ navRender(h.slice(2).toUpperCase()); try { await viewTicker(h.slice(2).toUpperCase()); } catch(e){ $('#view').innerHTML = `<span class="back" onclick="history.back()">Back</span><div class="empty">Couldn't show this ticker: ${esc(e.message)}</div>`; } window.scrollTo(0,0); return; }
   navRender(h); ecClear();
-  const fn = {calendar:viewCalendar, insiders:viewInsiders, earn:viewEarn, brief:viewBrief, fear:viewFear, spx:viewSpx, league:viewLeague, today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, mscan:viewMarketScan, live:viewLive, livenews:viewLiveNews, news:viewNews, wsb:viewWSB, filings:viewFilings, term:viewTerminal, lenses:viewLenses, edge:viewEdge, factor:viewFactor, crypto:viewCrypto, perf:viewPerf, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewBrief;
+  const fn = {requests:viewRequests, calendar:viewCalendar, insiders:viewInsiders, earn:viewEarn, brief:viewBrief, fear:viewFear, spx:viewSpx, league:viewLeague, today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, mscan:viewMarketScan, live:viewLive, livenews:viewLiveNews, news:viewNews, wsb:viewWSB, filings:viewFilings, term:viewTerminal, lenses:viewLenses, edge:viewEdge, factor:viewFactor, crypto:viewCrypto, perf:viewPerf, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewBrief;
   try { await fn(); } catch(e){ $('#view').innerHTML = `<div class="empty">Couldn't render this view: ${esc(e.message)}</div>`; }
 }
 let GATED = false;
