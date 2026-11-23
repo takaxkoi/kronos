@@ -41,7 +41,7 @@ header.top{position:sticky;top:0;z-index:30;background:var(--bg);padding:calc(10
 .menubtn[aria-expanded="true"]{background:var(--ink);color:var(--bg)}
 .iconbtn{flex:none;width:52px;height:52px;border:0;border-radius:26px;background:var(--panel);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .iconbtn:active,.menubtn:active{background:var(--panel2)}
-.menu{position:absolute;left:-14px;right:-14px;top:100%;max-height:calc(100vh - 76px - env(safe-area-inset-top,0px));overflow-y:auto;background:var(--bg);border-bottom:1px solid var(--line2);padding:6px 14px 20px;box-shadow:0 30px 60px rgba(0,0,0,.6)}
+.menu{position:absolute;left:-14px;right:-14px;top:100%;max-height:calc(100vh - 124px - env(safe-area-inset-top,0px));overflow-y:auto;background:var(--bg);border-bottom:1px solid var(--line2);padding:6px 14px 20px;box-shadow:0 30px 60px rgba(0,0,0,.6)}
 .menu input{width:100%;height:52px;border:2px solid var(--line2);border-radius:26px;background:var(--panel);padding:0 18px;font-size:17px;font-weight:500}
 .menu input:focus{outline:none;border-color:var(--gold)}
 .menu h4{margin:18px 4px 8px;font-size:13px;font-weight:500;color:var(--muted)}
@@ -188,6 +188,65 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:var(--
 .wl b{font-size:19px}.wl span{font-size:16px;color:var(--ink2)}
 .wl i{font-style:normal;height:38px;border-radius:19px;display:flex;align-items:center;justify-content:center;font-size:15.5px;font-weight:700;color:#141414}
 .wl i.u{background:var(--up)}.wl i.d{background:var(--dn)}
+/* ticker tape: terminal strip under the top bar (amber on black, monospace) */
+.tape{display:flex;align-items:stretch;height:38px;margin:8px -14px 0;background:#000;border-top:1px solid #3A2C0A;border-bottom:1px solid #3A2C0A;font:500 13px/1 ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.02em}
+.tape[hidden],.tp-det[hidden]{display:none}
+.tp-tag{flex:none;min-width:70px;border:0;border-right:1px solid #3A2C0A;background:#FFA028;color:#000;font:inherit;font-weight:700;font-size:11px;padding:0 10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.tp-tag.off{background:#1F1703;color:#FFA028}
+.tp-scroll{flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tp-scroll::-webkit-scrollbar{display:none}
+.tp-run{display:inline-flex;height:100%;white-space:nowrap}
+.tp-set{display:inline-flex;height:100%}
+.tp-i{flex:none;display:inline-flex;align-items:center;gap:8px;height:100%;border:0;border-right:1px solid #1C1C1C;background:none;padding:0 14px;font:inherit;color:#FFF;cursor:pointer;white-space:nowrap}
+.tp-i b{color:#FFA028;font-weight:700}
+.tp-i i{font-style:normal}
+.tp-i i.u,.tp-det .u{color:#3BE477}.tp-i i.d,.tp-det .d{color:#FF5B4D}.tp-i i.n{color:#D0D0D0}
+.tp-i.on{background:#1F1703}
+.tp-i:focus-visible,.tp-tag:focus-visible{outline:2px solid #FFF;outline-offset:-2px}
+.tp-det{margin:0 -14px;background:#000;border-bottom:1px solid #3A2C0A;padding:12px 14px 14px;font:500 13px/1.4 ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#FFF}
+.tp-det .h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.tp-det .h b{color:#FFA028;font-size:22px;font-weight:700}
+.tp-det .h span{font-size:22px;font-weight:700}
+.tp-det .lbl{color:#FFA028;font-size:11px;letter-spacing:.06em}
+.tp-rng{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;margin:12px 0 4px}
+.tp-rng .bar{height:4px;background:#3A2C0A;position:relative}
+.tp-rng .bar u{position:absolute;top:-5px;width:4px;height:14px;margin-left:-2px;background:#FFA028}
+.tp-kv{display:flex;gap:6px 18px;flex-wrap:wrap;margin-top:8px;color:#D0D0D0}
+.tp-act{display:flex;gap:8px;margin-top:12px}
+.tp-act button{flex:1;min-height:44px;border:1px solid #FFA028;background:#000;color:#FFA028;font:inherit;font-weight:700;cursor:pointer}
+.tp-act button.p{background:#FFA028;color:#000}
+
+/* media dock: the live TV or podcast that is switched on, kept across pages */
+.dock{background:var(--panel);border-radius:var(--r);padding:12px;margin-bottom:16px}
+.dk-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-width:0}
+.dk-head b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
+.dk-live{flex:none;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:99px;background:var(--bg);color:var(--ink)}
+.dk-live::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--dn)}
+.dk-head button{flex:none;min-height:44px;border:0;border-radius:22px;background:var(--panel2);padding:0 14px;font-weight:700;font-size:13px;cursor:pointer}
+.dk-body{display:flex;flex-direction:column;gap:10px}
+.dk-frame{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden}
+.dk-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.dk-side{font-size:13px;color:var(--muted);min-width:0}
+.dk-side a{display:inline-flex;align-items:center;min-height:44px;font-weight:700}
+.dock.mini .dk-body{flex-direction:row;align-items:center}
+.dock.mini .dk-frame{flex:none;width:200px;border-radius:10px}
+.dk-pod small{display:block;color:var(--muted);font-size:13px;margin:2px 0 10px}
+.dk-pod audio{width:100%;height:44px}
+.tv-on{width:100%;border:0;border-radius:var(--r);background:var(--gold);color:#141414;padding:22px 18px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:16px}
+.tv-on svg{flex:none}
+.tv-on b{display:block;font-size:26px;line-height:1.1;letter-spacing:-.02em}
+.tv-on small{display:block;font-size:13.5px;font-weight:500;margin-top:4px}
+.stn{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.stn button{min-height:64px;border:0;border-radius:16px;background:var(--panel);padding:10px 14px;text-align:left;cursor:pointer;min-width:0}
+.stn button b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stn button small{display:block;color:var(--muted);font-size:12px;font-weight:500;margin-top:2px}
+.stn button.on{background:var(--gold);color:#141414}.stn button.on small{color:#141414}
+.ep{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.ep button{min-height:56px;border:0;border-radius:14px;background:var(--bg);padding:10px 14px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;min-width:0}
+.ep button span{flex:1;min-width:0}
+.ep button b{display:block;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ep button small{color:var(--muted);font-size:12px;font-weight:500}
+.ep button.on{background:var(--gold);color:#141414}.ep button.on small{color:#141414}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -199,6 +258,11 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:var(--
       <button class="iconbtn" id="searchBtn" aria-label="Search a ticker or page"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="2.2" fill="none"/><path d="M14 14l4 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
       <button class="iconbtn" id="reload" aria-label="Refresh data"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M16.5 10a6.5 6.5 0 1 1-2-4.7M16.5 3v3.5H13" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
+    <div class="tape" id="tape" hidden>
+      <button class="tp-tag" id="tapeTag"></button>
+      <div class="tp-scroll" id="tapeScroll" aria-label="Ticker. Swipe to move, tap a symbol for detail"><div class="tp-run" id="tapeRun"></div></div>
+    </div>
+    <div class="tp-det" id="tapeDet" hidden></div>
     <div class="menu" id="menu" hidden>
       <input id="cmd" type="search" placeholder="Type a ticker or a page name" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" aria-label="Search a ticker or page">
       <div id="menuBody"></div>
@@ -207,6 +271,10 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:var(--
   </header>
   <div class="status"><span id="stamp">loading</span><span id="moodPill"></span><span id="hitPill"></span></div>
   <nav id="nav" aria-label="Shortcuts"></nav>
+  <section class="dock" id="dock" aria-label="Now playing" hidden>
+    <div class="dk-head"><span class="dk-live" id="dkTag">Live</span><b id="dkName"></b><button id="dkOpen">Stations</button><button id="dkOff">Turn off</button></div>
+    <div class="dk-body" id="dkBody"></div>
+  </section>
   <main id="view"><div class="loading">Loading forecasts</div></main>
   <p class="disc">Kronos Oracle shows machine-learning forecasts of price patterns. They are probabilities, not promises — the report card shows how often they have actually been right. Not financial advice.</p>
 </div>
@@ -249,19 +317,19 @@ const meter = a => { const n = a.samples||0, up = Math.round((a.p_up||0)*n); let
 
 let LATEST = null, REPORT = null;
 const MENU = [
-  ['Markets', [['brief','Daily brief'],['today','Today'],['crypto','Crypto'],['spx','S&P 500'],['fear','Fear and greed'],['calendar','Calendar'],['economy','Economy'],['live','Live prices'],['market','Market map'],['scanner','S&P 500 scan'],['mscan','Market scan'],['other','Crypto, FX, gold']]],
+  ['Markets', [['brief','Daily brief'],['today','Today'],['crypto','Crypto'],['spx','S&P 500'],['fear','Fear and greed'],['calendar','Calendar'],['economy','Economy'],['gov','Government data'],['live','Live prices'],['market','Market map'],['scanner','S&P 500 scan'],['mscan','Market scan'],['other','Crypto, FX, gold']]],
   ['Stocks', [['term','Terminal'],['watch','Watchlist'],['second','Two models'],['earn','Earnings moves'],['insiders','Insider trades'],['research','AI research'],['lenses','Lenses']]],
-  ['News and crowd', [['livenews','Live news'],['news','News mood'],['wsb','WallStreetBets']]],
+  ['News and crowd', [['tv','Live TV and audio'],['livenews','Live news'],['news','News mood'],['wsb','WallStreetBets']]],
   ['Labs', [['factor','Strategy test'],['edge','Edge Lab'],['filings','Filings Lab'],['perf','Performance'],['report','Report card'],['backtest','Backtest Lab']]],
   ['Account', [['league','Strategy league'],['paper','Paper trading'],['journal','Journal'],['requests','Access requests'],['setup','Setup']]],
 ];
 const TABS = MENU.flatMap(g => g[1]);
-const QUICK = [['brief','Brief'],['today','Today'],['spx','S&P 500'],['crypto','Crypto'],['livenews','News']];
+const QUICK = [['brief','Brief'],['today','Today'],['spx','S&P 500'],['crypto','Crypto'],['livenews','News'],['tv','Live TV']];
 let LIVE_T = null;
 function menuOpen(open, focus){
   const m = $('#menu'), b = $('#menuBtn');
   m.hidden = !open; b.setAttribute('aria-expanded', open ? 'true' : 'false');
-  if (open){ $('#cmd').value = ''; menuDraw(''); m.scrollTop = 0; if (focus) $('#cmd').focus(); }
+  if (open){ tapeDetail(null); $('#cmd').value = ''; menuDraw(''); m.scrollTop = 0; if (focus) $('#cmd').focus(); }
 }
 let STOCKS = null;
 async function menuDraw(q){
@@ -1033,6 +1101,51 @@ async function viewCrypto(){
   tick(); CX.timer = setInterval(tick, 60000);
 }
 
+/* ---------- Government data: Fed liquidity, positioning, big investors, 8-Ks, short volume, Congress ---------- */
+let GOV = {fund:0, cong:'all'};
+async function viewGov(){
+  const G = await get('gov.json');
+  if (!G){ $('#view').innerHTML = '<div class="empty">Government data fills in each night. Run Actions → “Government data” to fill it now.</div>'; return; }
+  const bn = x => x == null ? '—' : x >= 1e9 ? '$' + (x/1e9).toFixed(1) + 'B' : x >= 1e6 ? '$' + (x/1e6).toFixed(0) + 'M' : '$' + Math.round(x/1e3) + 'K';
+  const L = G.liquidity, P = G.cot || [], F = G.funds || [], E = G.events || [], S = G.shorts, K = G.congress;
+  let h = `<div class="lede"><div class="sub" style="margin-bottom:6px">Free public records · updated ${ago(G.generated)}</div><h1>What the government's data says</h1>
+    <p>Fed liquidity, how hedge funds are positioned, what famous investors bought, big events at your companies, short selling and Congress trades.</p></div>`;
+  if (L) h += `<div class="sec-title">Fed liquidity<small>Fed balance sheet minus the Treasury's cash account and reverse repo · week of ${esc(L.asof)}</small></div>
+    <div class="grid g4 keep2"><div class="card"><h3>Net liquidity</h3><div class="hero">$${L.net.toFixed(2)}T</div><div class="sub ${cls(L.chg_3m)}">${L.chg_3m>=0?'+':'−'}$${Math.abs(L.chg_3m*1000).toFixed(0)}B in 3 months</div></div>
+      <div class="card"><h3>Fed balance sheet</h3><div class="hero" style="font-size:36px">$${L.fed.toFixed(2)}T</div></div><div class="card"><h3>Treasury cash</h3><div class="hero" style="font-size:36px">$${(L.tga*1000).toFixed(0)}B</div></div>
+      <div class="card"><h3>Reverse repo</h3><div class="hero" style="font-size:36px">$${(L.rrp*1000).toFixed(0)}B</div></div></div>
+    <div class="card" style="margin-top:10px"><p style="margin:0 0 8px;font-size:15px">${esc(L.read)}${L.corr!=null?` Over the past four years, 3-month changes in liquidity and the S&P 500 moved together with a correlation of ${L.corr}.`:''}</p><div id="govLiq"></div></div>`;
+  if (P.length) h += `<div class="sec-title">How the big speculators are positioned<small>CFTC Commitments of Traders · net long as a share of open interest · bar = where it sits in the past 3 years</small></div><div class="card">${P.map(p => `<div class="idea"><span style="min-width:0;flex:1"><b>${esc(p.name)}</b> <small class="muted">${esc(p.date)}</small>
+      <small style="display:block;color:var(--muted);line-height:1.4">${esc(p.read)}</small><div style="height:6px;border-radius:3px;background:linear-gradient(90deg,var(--dn),var(--line2) 50%,var(--up));position:relative;margin:8px 0 2px;max-width:420px"><i style="position:absolute;top:-4px;left:calc(${(p.pctile*100).toFixed(0)}% - 2px);width:4px;height:14px;border-radius:2px;background:var(--ink)"></i></div></span>
+      <span style="text-align:right"><span class="big ${cls(p.net_pct)}">${p.net_pct>0?'+':''}${(p.net_pct*100).toFixed(1)}%</span><small style="display:block;color:var(--muted)">${p.chg>=0?'+':''}${(p.chg*100).toFixed(1)} pts this week</small></span></div>`).join('')}</div>`;
+  if (F.length){ const f = F[Math.min(GOV.fund, F.length-1)], li = (a, k) => a.length ? a.map(x => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:5px 0;border-top:1px solid var(--line)"><span>${esc(x.name)}</span><span>${bn(k==='sold'?x.old:x.value)}${x.chg_shares!=null&&k!=='top'?` <small class="${cls(x.chg_shares)}">${x.chg_shares>0?'+':''}${(x.chg_shares*100).toFixed(0)}% shares</small>`:''}${k==='top'?` <small class="muted">${(x.pct*100).toFixed(1)}%</small>`:''}</span></div>`).join('') : '<div class="sub">None</div>';
+    h += `<div class="sec-title">What famous investors bought and sold<small>SEC 13F filings · quarter ending ${esc(f.period)} vs ${esc(f.prev_period)} · filed up to 45 days after the quarter</small></div>
+    <div class="seg" id="govFund" style="flex-wrap:wrap;margin-bottom:10px">${F.map((x,i) => `<button data-v="${i}" class="${i===GOV.fund?'on':''}">${esc(x.fund)}</button>`).join('')}</div>
+    <div class="card"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><b style="font-size:18px">${esc(f.fund)}</b> <span class="muted">${esc(f.who)}</span></div><div class="sub">${bn(f.total)} in ${f.positions} US stocks · filed ${esc(f.filed)} · <a href="${esc(f.url)}" target="_blank" rel="noopener" style="color:var(--gold)">SEC</a></div></div>
+      <div class="grid g2" style="margin-top:10px"><div><h3>Biggest holdings</h3>${li(f.top,'top')}</div><div><h3>New buys</h3>${li(f.new,'new')}</div><div><h3>Added to</h3>${li(f.added,'added')}</div><div><h3>Sold completely</h3>${li(f.sold,'sold')}</div><div><h3>Trimmed</h3>${li(f.trimmed,'trimmed')}</div></div></div>`; }
+  if (E.length) h += `<div class="sec-title">Big events at your companies<small>SEC 8-K filings, last 120 days · highlighted = the kind that tends to move a stock</small></div><div class="card"><div class="tbl"><table><thead><tr><th>Date</th><th>Stock</th><th>What happened</th><th></th></tr></thead><tbody>
+    ${E.slice(0,25).map(e => `<tr style="${e.important?'background:rgba(255,181,71,.07)':''}"><td>${esc(e.date)}</td><td><b>${esc(e.ticker)}</b></td><td style="white-space:normal">${e.important?'<b style="color:#FFB547">● </b>':''}${esc(e.what)}</td><td><a href="${esc(e.url)}" target="_blank" rel="noopener" style="color:var(--gold)">Filing</a></td></tr>`).join('')}</tbody></table></div></div>`;
+  if (S){ const row = x => `<tr><td><b>${esc(x.t)}</b></td><td class="n">${pct0(x.pct10)}</td><td class="n">${x.today==null?'—':pct0(x.today)}</td><td class="n">${(x.vol/1e6).toFixed(1)}M</td></tr>`, th = '<thead><tr><th>Stock</th><th class="n">Short share, 10 days</th><th class="n">Last day</th><th class="n">Daily volume</th></tr></thead>';
+    h += `<div class="sec-title">Short selling<small>FINRA daily short sale volume · ${S.days.length} trading days to ${esc(S.days[S.days.length-1])}${S.market_avg?` · market average ${pct0(S.market_avg)}`:''}</small></div>
+    <div class="grid g2"><div class="card"><h3>Your watchlist</h3><div class="tbl"><table>${th}<tbody>${S.watch.map(row).join('')}</tbody></table></div></div>
+    <div class="card"><h3>Most shorted large caps</h3><div class="tbl"><table>${th}<tbody>${S.most_shorted.slice(0,12).map(row).join('')}</tbody></table></div></div></div>
+    <div class="sub" style="margin:8px 2px">About half of all trading shows up as short sales because market makers sell short to fill buy orders, so compare a stock with its own past and the market average rather than reading 50% as bearish.</div>`; }
+  if (K){ const T = K.trades.filter(x => GOV.cong === 'all' || x.side === GOV.cong);
+    h += `<div class="sec-title">Congress trades in your watchlist<small>House and Senate disclosures, last 6 months · members have up to 45 days to report</small></div>
+    <div class="chips" style="margin-bottom:10px">${K.summary.filter(s => s.buys + s.sells).map(s => `<span class="chip">${esc(s.t)} <span class="up">${s.buys} buy${s.buys===1?'':'s'}</span> · <span class="dn">${s.sells} sell${s.sells===1?'':'s'}</span></span>`).join('')}</div>
+    ${segHTML('govCong', [['all','All'],['Buy','Buys'],['Sell','Sells']], GOV.cong)}
+    <div class="card" style="margin-top:10px"><div class="tbl"><table><thead><tr><th>Traded</th><th>Stock</th><th>Member</th><th>Side</th><th class="n">Amount</th><th>Filed</th></tr></thead><tbody>
+    ${T.slice(0,50).map(x => `<tr><td>${esc(x.date)}</td><td><b>${esc(x.t)}</b></td><td style="white-space:normal">${esc(x.who||'')} <small class="muted">${esc(x.party||'')}-${esc(x.state||'')} · ${esc(x.chamber||'')}</small></td><td class="${x.side==='Buy'?'up':x.side==='Sell'?'dn':''}">${esc(x.side)}</td><td class="n">${bn(x.lo)}–${bn(x.hi)}</td><td>${esc(x.filed)}</td></tr>`).join('') || '<tr><td colspan="6" class="sub">No trades.</td></tr>'}</tbody></table></div></div>`; }
+  h += `<div class="sub" style="margin:18px 2px">Sources: ${(G.sources||[]).map(esc).join(', ')}. Public records, often delayed; not financial advice.</div>`;
+  $('#view').innerHTML = h; ecClear();
+  if (L && L.series) ec('govLiq', {tooltip:{trigger:'axis'}, legend:{textStyle:{color:C.ink2}, top:0}, grid:{left:8, right:8, top:34, bottom:8, containLabel:true}, xAxis:axC(L.series.dates),
+    yAxis:[Object.assign(axV(v => '$' + v.toFixed(1) + 'T'), {scale:true}), Object.assign(axV(v => Math.round(v).toLocaleString()), {scale:true, splitLine:{show:false}})],
+    series:[{name:'Net liquidity ($T)', type:'line', data:L.series.net, showSymbol:false, lineStyle:{color:C.up, width:2.5}, itemStyle:{color:C.up}, areaStyle:{color:'rgba(198,244,50,.08)'}},
+      {name:'S&P 500', type:'line', yAxisIndex:1, data:L.series.spx, showSymbol:false, lineStyle:{color:C.ink, width:1.5, opacity:.7}, itemStyle:{color:C.ink}}]}, 260);
+  segWire('govFund', v => { GOV.fund = +v; const y = window.scrollY; viewGov().then(() => window.scrollTo(0, y)); });
+  segWire('govCong', v => { GOV.cong = v; const y = window.scrollY; viewGov().then(() => window.scrollTo(0, y)); });
+}
+
 async function viewFactor(){
   const F = await get('factorlab.json');
   if (!F){ $('#view').innerHTML = '<div class="empty">The strategy test runs each weeknight with the Edge Lab. Run Actions → “Edge Lab + performance” to fill this now.</div>'; return; }
@@ -1672,11 +1785,189 @@ async function viewSetup(){
   const { data: u } = await sb.auth.getUser(); $('#who').textContent = u?.user?.email || '';
 }
 
+/* ───────── TICKER TAPE ─────────
+   Prices come from quotes.json and the "Markets right now" lines of brief.json, the same files the
+   pages use, so the tape never shows a number the rest of the app does not have. */
+const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TAPE = {x:0, half:0, hold:0, sync:true, last:0, sel:null, rows:{}, gen:null, on:false, paused:store.get('oracle_tape_paused', false)};
+function tapeTag(){
+  const b = $('#tapeTag'), stop = TAPE.paused || REDUCED;
+  b.className = 'tp-tag' + (stop ? ' off' : '');
+  b.innerHTML = (stop ? '&#9654; ' : '&#10074;&#10074; ') + esc(TAPE.gen ? ago(TAPE.gen).replace(' ago', '').toUpperCase() : 'TAPE');
+  b.setAttribute('aria-label', (TAPE.gen ? 'Prices updated ' + ago(TAPE.gen) + '. ' : '') + (stop ? 'Tap to start the ticker moving' : 'Tap to pause the ticker'));
+}
+async function tapeDraw(){
+  const [Q, B] = await Promise.all([get('quotes.json'), get('brief.json')]);
+  const items = [], open = ((B && B.sections) || []).find(s => s.key === 'open');
+  ((open && open.lines) || []).forEach(l => { const m = /^(.*?)\s((?:[+\-−$]\S*\d|\d[\d,]*[.%]).*)$/.exec(l.t || ''); if (m) items.push({name:m[1], val:m[2], tone:l.tone}); });
+  ((Q && Q.rows) || []).forEach(r => { if (r.price != null) items.push({r}); });
+  if (!items.length){ $('#tape').hidden = true; return; }
+  TAPE.rows = Object.fromEntries(((Q && Q.rows) || []).map(r => [r.ticker, r])); TAPE.gen = (Q && Q.generated) || (B && B.generated) || null;
+  const cell = (i, tab) => i.r
+    ? `<button class="tp-i${TAPE.sel === i.r.ticker ? ' on' : ''}" data-tp="${esc(i.r.ticker)}"${tab}><b>${esc(i.r.ticker)}</b><span>${px(i.r.price)}</span>${i.r.change_pct == null ? '' : `<i class="${i.r.change_pct >= 0 ? 'u' : 'd'}">${i.r.change_pct >= 0 ? '▲' : '▼'} ${Math.abs(i.r.change_pct).toFixed(2)}%</i>`}</button>`
+    : `<button class="tp-i" data-tpgo="brief"${tab}><b>${esc(i.name.toUpperCase())}</b><i class="${i.tone === 'up' ? 'u' : i.tone === 'dn' ? 'd' : 'n'}">${esc(i.val)}</i></button>`;
+  /* two copies side by side: when the first has scrolled past, jump back by its width and the loop is seamless */
+  $('#tapeRun').innerHTML = `<span class="tp-set" id="tapeSet">${items.map(i => cell(i, '')).join('')}</span><span class="tp-set" aria-hidden="true">${items.map(i => cell(i, ' tabindex="-1"')).join('')}</span>`;
+  $('#tape').hidden = false; TAPE.half = $('#tapeSet').offsetWidth; tapeTag();
+  if (TAPE.sel) tapeDetail(TAPE.sel, true);
+}
+function tapeDetail(t, keep){
+  const p = $('#tapeDet'), r = t && TAPE.rows[t];
+  if (!p) return;
+  if (!r || (TAPE.sel === t && !keep)){ TAPE.sel = null; p.hidden = true; p.innerHTML = ''; }
+  else {
+    TAPE.sel = t;
+    const ch = r.prev_close != null ? r.price - r.prev_close : null, up = (r.change_pct != null ? r.change_pct : ch || 0) >= 0;
+    const pos = r.low != null && r.high != null && r.high > r.low ? Math.max(0, Math.min(100, 100 * (r.price - r.low) / (r.high - r.low))) : null;
+    p.innerHTML = `<div class="h"><b>${esc(t)}</b><span>${px(r.price)}</span><span class="${up ? 'u' : 'd'}" style="font-size:15px">${up ? '▲' : '▼'} ${ch != null ? px(Math.abs(ch)) + ' ' : ''}${r.change_pct != null ? '(' + Math.abs(r.change_pct).toFixed(2) + '%)' : ''}</span></div>
+      ${pos != null ? `<div class="tp-rng"><span><span class="lbl">LOW</span> ${px(r.low)}</span><div class="bar" role="img" aria-label="Price sits ${Math.round(pos)} percent of the way from today's low to today's high"><u style="left:${pos.toFixed(1)}%"></u></div><span><span class="lbl">HIGH</span> ${px(r.high)}</span></div>` : ''}
+      <div class="tp-kv">${r.prev_close != null ? `<span><span class="lbl">PREV CLOSE</span> ${px(r.prev_close)}</span>` : ''}<span><span class="lbl">UPDATED</span> ${esc(ago(r.time || TAPE.gen))}</span>${r.source ? `<span><span class="lbl">SOURCE</span> ${esc(String(r.source).toUpperCase())}</span>` : ''}</div>
+      <div class="tp-act"><button class="p" data-a="open">OPEN ${esc(t)}</button><button data-a="news">NEWS</button><button data-a="x">CLOSE</button></div>`;
+    p.hidden = false;
+    p.querySelector('[data-a="open"]').onclick = () => { tapeDetail(null); location.hash = 't/' + t; };
+    p.querySelector('[data-a="news"]').onclick = () => { tapeDetail(null); NEWS_F.side = 'all'; NEWS_F.t = t; if ((decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'brief') === 'livenews') viewLiveNews(); else location.hash = 'livenews'; };
+    p.querySelector('[data-a="x"]').onclick = () => tapeDetail(null);
+  }
+  document.querySelectorAll('#tapeRun .tp-i[data-tp]').forEach(b => b.classList.toggle('on', b.dataset.tp === TAPE.sel));
+}
+function tapeLoop(ts){
+  const sc = $('#tapeScroll');
+  if (sc && !TAPE.paused && !REDUCED && !document.hidden && TAPE.half > 0 && Date.now() > TAPE.hold){
+    if (TAPE.sync){ TAPE.x = sc.scrollLeft; TAPE.sync = false; }
+    TAPE.x += Math.min(64, ts - (TAPE.last || ts)) * 0.04;
+    if (TAPE.x >= TAPE.half) TAPE.x -= TAPE.half;
+    sc.scrollLeft = TAPE.x;
+  } else TAPE.sync = true;
+  TAPE.last = ts; requestAnimationFrame(tapeLoop);
+}
+function tapeStart(){
+  tapeDraw();
+  if (TAPE.on) return; TAPE.on = true;
+  const sc = $('#tapeScroll'), rest = ms => { TAPE.hold = Date.now() + ms; };
+  /* a finger or pointer on the tape stops it so it can be dragged; it moves again shortly after */
+  sc.addEventListener('touchstart', () => { TAPE.hold = Infinity; }, {passive:true});
+  sc.addEventListener('touchend', () => rest(2500), {passive:true});
+  sc.addEventListener('touchcancel', () => rest(2500), {passive:true});
+  sc.addEventListener('wheel', () => rest(2500), {passive:true});
+  sc.addEventListener('mouseenter', () => { TAPE.hold = Infinity; });
+  sc.addEventListener('mouseleave', () => rest(300));
+  sc.addEventListener('focusin', () => { TAPE.hold = Infinity; });
+  sc.addEventListener('focusout', () => rest(300));
+  sc.addEventListener('click', e => {
+    const b = e.target.closest('.tp-i'); if (!b) return;
+    if (b.dataset.tp) tapeDetail(b.dataset.tp); else { tapeDetail(null); location.hash = b.dataset.tpgo; }
+  });
+  $('#tapeTag').onclick = () => { if (REDUCED) return; TAPE.paused = !TAPE.paused; store.set('oracle_tape_paused', TAPE.paused); tapeTag(); };
+  setInterval(() => { if (document.hidden) return; delete cache['quotes.json']; delete cache['brief.json']; tapeDraw(); }, 120000);
+  requestAnimationFrame(tapeLoop);
+}
+
+/* ───────── LIVE TV AND AUDIO ─────────
+   Each station is the channel's own free YouTube live stream, shown in YouTube's player. The channel ids
+   were checked against the channel pages on Nov 23, 2026. Whatever is switched on lives in #dock, outside
+   #view, so it keeps playing while you move between pages. */
+const STATIONS = [
+  ['bloomberg', 'Bloomberg TV', 'UCIALMKvObZNtJ6AmdCLP7Lg', 'm', '24-hour business news'],
+  ['yahoo', 'Yahoo Finance', 'UCEAZeUIeJs0IjQiqTCdVSIg', 'm', 'Live shows on trading days'],
+  ['cnbc', 'CNBC', 'UCrp_UI8XtuYfpiqluWLD7Lw', 'm', 'Live for big events only'],
+  ['foxbiz', 'Fox Business', 'UCCXoCcu9Rp7NPbTzIvogpZg', 'm', 'Live for big events only'],
+  ['nbc', 'NBC News NOW', 'UCeY0bbntWzzVIaj2z3QigXg', 'w', '24-hour news'],
+  ['abc', 'ABC News Live', 'UCBi2mrWuNuyYy4gbM6fU18Q', 'w', '24-hour news'],
+  ['cbs', 'CBS News 24/7', 'UC8p1vwvWtl6T73JiExfWs1g', 'w', '24-hour news'],
+  ['livenow', 'LiveNOW from FOX', 'UCJg9wBPyKMNA5sRDnvzmkdg', 'w', '24-hour live coverage'],
+  ['sky', 'Sky News', 'UCoMdktPbSTixAyNGwb-UYkQ', 'w', '24-hour news from London'],
+  ['aje', 'Al Jazeera English', 'UCNye-wNBqNL5ZzHSJj3l8Bg', 'w', '24-hour world news'],
+];
+const SHOWS = [['Bloomberg Surveillance','bloombergsurveillance'],['Odd Lots','oddlots'],["WSJ What's News",'whatsnews'],['Wall Street Breakfast','wallstreetbreakfast'],['Marketplace Morning Report','marketplacemorningreport'],['The Indicator from Planet Money','theindicator'],['Motley Fool Money','motleyfoolmoney'],['Squawk Pod','squawkpod'],['Mad Money with Jim Cramer','madmoney'],['Morning Brew Daily','morningbrewdaily'],['Unhedged','unhedged']];
+let MEDIA = null, POD = {show:null, eps:null, err:null, link:null};
+const hashKey = () => decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'brief';
+function dockSync(h){
+  const d = $('#dock'); if (!d) return;
+  d.hidden = !MEDIA;
+  d.classList.toggle('mini', !!MEDIA && MEDIA.kind === 'tv' && h !== 'tv');
+  $('#dkOpen').hidden = h === 'tv';
+}
+function dockRender(){
+  const body = $('#dkBody');
+  if (!MEDIA){ body.innerHTML = ''; dockSync(hashKey()); return; }
+  if (MEDIA.kind === 'tv'){
+    const s = STATIONS.find(x => x[0] === MEDIA.id);
+    $('#dkTag').textContent = 'Live'; $('#dkName').textContent = s[1];
+    body.innerHTML = `<div class="dk-frame"><iframe src="https://www.youtube.com/embed/live_stream?channel=${s[2]}&autoplay=1&playsinline=1&rel=0" title="${esc(s[1])} live stream" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+      <div class="dk-side">${esc(s[4])}. If the player says the video is unavailable, the channel is not live right now.<br><a href="https://www.youtube.com/channel/${s[2]}/live" target="_blank" rel="noopener noreferrer">Open in YouTube</a></div>`;
+  } else {
+    $('#dkTag').textContent = 'Audio'; $('#dkName').textContent = MEDIA.show;
+    body.innerHTML = `<div class="dk-pod"><b>${esc(MEDIA.title)}</b><small>${esc(MEDIA.show)}${MEDIA.date ? ', ' + esc(dateS(MEDIA.date)) : ''}</small><audio controls autoplay preload="metadata" src="${esc(MEDIA.url)}"></audio></div>`;
+    try { if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({title: MEDIA.title, artist: MEDIA.show}); } catch(e){}
+  }
+  dockSync(hashKey());
+}
+function tvPlay(id){ store.set('oracle_tv', id); MEDIA = {kind:'tv', id}; dockRender(); if (hashKey() === 'tv'){ viewTV(); window.scrollTo(0, 0); } }
+function mediaOff(){ MEDIA = null; dockRender(); if (hashKey() === 'tv') viewTV(); }
+function jsonp(url){
+  return new Promise((res, rej) => {
+    const cb = '__jp' + Date.now() + Math.floor(Math.random() * 1e6), sc = document.createElement('script');
+    const done = (f, v) => { clearTimeout(t); window[cb] = () => {}; sc.remove(); f(v); };
+    const t = setTimeout(() => done(rej, new Error('timed out')), 12000);
+    window[cb] = d => done(res, d); sc.onerror = () => done(rej, new Error('blocked'));
+    sc.src = url + '&callback=' + cb; document.head.appendChild(sc);
+  });
+}
+/* Podcasts come from Apple's public podcast directory at the moment you tap a show, so the list is always
+   the newest episodes and nothing is stored on our side. */
+async function podOpen(i){
+  const [name, key] = SHOWS[i], norm = x => String(x || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  POD = {show:i, eps:null, err:null, link:'https://podcasts.apple.com/us/search?term=' + encodeURIComponent(name)}; podDraw();
+  try {
+    const ids = store.get('oracle_pod_ids', {});
+    if (!ids[key]){
+      const S = await jsonp('https://itunes.apple.com/search?media=podcast&entity=podcast&limit=8&term=' + encodeURIComponent(name));
+      const hit = ((S && S.results) || []).find(r => norm(r.collectionName).includes(key));
+      if (!hit) throw new Error('not found');
+      ids[key] = hit.collectionId; store.set('oracle_pod_ids', ids);
+    }
+    const L = await jsonp('https://itunes.apple.com/lookup?media=podcast&entity=podcastEpisode&limit=8&id=' + encodeURIComponent(ids[key]));
+    const eps = ((L && L.results) || []).filter(r => r.wrapperType === 'podcastEpisode' && /^https:\/\//.test(r.episodeUrl || ''));
+    if (POD.show !== i) return;
+    if (!eps.length) throw new Error('no episodes');
+    POD.eps = eps;
+  } catch(e){ if (POD.show !== i) return; POD.err = true; }
+  podDraw();
+}
+function podDraw(){
+  const el = $('#podList'); if (!el) return;
+  if (POD.show == null){ el.innerHTML = ''; return; }
+  const name = SHOWS[POD.show][0];
+  if (POD.err) el.innerHTML = `<div class="sub" style="padding:12px 2px">Could not load ${esc(name)} episodes right now. <a href="${esc(POD.link)}" target="_blank" rel="noopener noreferrer">Open it in Apple Podcasts</a></div>`;
+  else if (!POD.eps) el.innerHTML = `<div class="sub" style="padding:12px 2px">Loading the latest ${esc(name)} episodes</div>`;
+  else {
+    el.innerHTML = `<div class="ep">${POD.eps.map((e, n) => `<button data-ep="${n}" class="${MEDIA && MEDIA.kind === 'pod' && MEDIA.url === e.episodeUrl ? 'on' : ''}"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 2.5v13l11-6.5z" fill="currentColor"/></svg><span><b>${esc(e.trackName)}</b><small>${esc(dateS(e.releaseDate))}${e.trackTimeMillis ? ', ' + Math.round(e.trackTimeMillis / 60000) + ' min' : ''}</small></span></button>`).join('')}</div>`;
+    el.querySelectorAll('[data-ep]').forEach(b => b.onclick = () => { const e = POD.eps[+b.dataset.ep]; MEDIA = {kind:'pod', show:name, title:e.trackName, url:e.episodeUrl, date:e.releaseDate}; dockRender(); viewTV(); window.scrollTo(0, 0); });
+  }
+}
+async function viewTV(){
+  const on = MEDIA && MEDIA.kind === 'tv', curId = on ? MEDIA.id : store.get('oracle_tv', 'bloomberg'), cur = STATIONS.find(s => s[0] === curId) || STATIONS[0];
+  const group = (g, title, sub) => `<div class="sec-title">${title}<small>${sub}</small></div><div class="stn">${STATIONS.filter(s => s[3] === g).map(s => `<button data-st="${s[0]}" class="${on && s[0] === cur[0] ? 'on' : ''}" aria-pressed="${on && s[0] === cur[0]}"><b>${esc(s[1])}</b><small>${esc(s[4])}</small></button>`).join('')}</div>`;
+  let h = MEDIA ? '' : `<button class="tv-on" id="tvOn"><svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="22" fill="#141414"/><path d="M17 13v18l15-9z" fill="#C6F432"/></svg><span><b>Turn on ${esc(cur[1])}</b><small>${esc(cur[4])}. Free, and it keeps playing while you use the rest of the app.</small></span></button>`;
+  h += group('m', 'Market channels', 'Bloomberg is the one that is on all day and night. The others go live at set times.');
+  h += group('w', 'World news', 'Free 24-hour channels. CNN does not offer a free live stream, so it is not here.');
+  h += `<div class="sec-title">Listen<small>Free market podcasts. Audio keeps playing with your phone locked; live TV does not.</small></div>
+    <div class="card"><div class="seg" id="podSeg" style="display:flex">${SHOWS.map((s, i) => `<button data-pod="${i}" class="${POD.show === i ? 'on' : ''}">${esc(s[0])}</button>`).join('')}</div><div id="podList"></div>
+    ${POD.show == null ? '<div class="sub" style="padding:12px 2px 2px">Pick a show to see its newest episodes.</div>' : ''}</div>
+    <div class="sub" style="margin-top:12px;padding:0 4px">Live TV plays in YouTube's own player, so it uses YouTube's data and ads. On iPhone, tap the player once to start the sound.</div>`;
+  $('#view').innerHTML = h;
+  if ($('#tvOn')) $('#tvOn').onclick = () => tvPlay(cur[0]);
+  $('#view').querySelectorAll('[data-st]').forEach(b => b.onclick = () => tvPlay(b.dataset.st));
+  $('#podSeg').querySelectorAll('button').forEach(b => b.onclick = () => { podOpen(+b.dataset.pod); $('#podSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); const hint = $('#podList').nextElementSibling; if (hint) hint.remove(); });
+  podDraw();
+}
+
 async function route(){
   const h = decodeURIComponent(location.hash.replace(/^#\/?/, '')) || 'brief';
+  dockSync(h);
   if (h.startsWith('t/')){ navRender(h.slice(2).toUpperCase()); try { await viewTicker(h.slice(2).toUpperCase()); } catch(e){ $('#view').innerHTML = `<span class="back" onclick="history.back()">Back</span><div class="empty">Couldn't show this ticker: ${esc(e.message)}</div>`; } window.scrollTo(0,0); return; }
   navRender(h); ecClear();
-  const fn = {second:viewSecond, economy:viewEconomy, requests:viewRequests, calendar:viewCalendar, insiders:viewInsiders, earn:viewEarn, brief:viewBrief, fear:viewFear, spx:viewSpx, league:viewLeague, today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, mscan:viewMarketScan, live:viewLive, livenews:viewLiveNews, news:viewNews, wsb:viewWSB, filings:viewFilings, term:viewTerminal, lenses:viewLenses, edge:viewEdge, factor:viewFactor, crypto:viewCrypto, perf:viewPerf, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewBrief;
+  const fn = {tv:viewTV, second:viewSecond, economy:viewEconomy, gov:viewGov, requests:viewRequests, calendar:viewCalendar, insiders:viewInsiders, earn:viewEarn, brief:viewBrief, fear:viewFear, spx:viewSpx, league:viewLeague, today:viewToday, watch:viewWatch, market:viewMarket, scanner:viewScanner, other:viewOther, report:viewReport, research:viewResearch, mscan:viewMarketScan, live:viewLive, livenews:viewLiveNews, news:viewNews, wsb:viewWSB, filings:viewFilings, term:viewTerminal, lenses:viewLenses, edge:viewEdge, factor:viewFactor, crypto:viewCrypto, perf:viewPerf, backtest:viewBacktest, paper:viewPaper, journal:viewJournal, setup:viewSetup}[h] || viewBrief;
   try { await fn(); } catch(e){ $('#view').innerHTML = `<div class="empty">Couldn't render this view: ${esc(e.message)}</div>`; }
 }
 let GATED = false;
@@ -1699,10 +1990,13 @@ async function boot(){
     const m = LATEST.mood || {}; $('#moodPill').innerHTML = 'Forecast lean <b>' + esc((m.label||'—').toLowerCase()) + '</b>, ' + pct0(m.pct_up) + ' up';
     const r = LATEST.report || {}; $('#hitPill').innerHTML = 'Calls right <b>' + (r.hit_rate!=null ? pct0(r.hit_rate) : '—') + '</b>' + (r.n ? ' of ' + r.n.toLocaleString() : '');
   } else { $('#stamp').textContent = 'waiting for first scan'; }
+  tapeStart();
   route();
 }
 window.addEventListener('hashchange', route);
 navInit();
+$('#dkOpen').onclick = () => { location.hash = 'tv'; };
+$('#dkOff').onclick = mediaOff;
 $('#reload').onclick = () => { for (const k in cache) delete cache[k]; boot(); };
 $('#signout').onclick = async () => { await sb.auth.signOut(); location.replace('./'); };
 sb.auth.onAuthStateChange((ev) => {
