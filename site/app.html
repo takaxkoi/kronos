@@ -113,6 +113,7 @@ tr.click{cursor:pointer}tr.click:active td{background:var(--panel2)}
 .seg::-webkit-scrollbar{display:none}
 .seg button{flex:0 0 auto;border:0;background:none;min-height:42px;padding:0 14px;border-radius:21px;font-size:13.5px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
 .seg button.on{background:var(--gold);color:#141414}
+.pro-open{margin-left:auto;border:1px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:21px;min-height:42px;padding:0 14px;font:700 13px inherit;font-family:inherit;cursor:pointer}.pro-open:hover{border-color:var(--gold);color:var(--gold)}
 .card .seg{background:var(--bg)}
 .heat{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:4px}
 .heat div{border-radius:12px;padding:8px 7px;font-size:12px;font-weight:700;cursor:pointer;min-height:48px;color:#F2F2F2}
@@ -1238,7 +1239,7 @@ async function viewLiveNews(isRefresh){
 const CHART = {range: 66, type: 'candle', src: null, id: null};
 function chartCard(title){
   const R = [[22,'1M'],[66,'3M'],[130,'6M'],[260,'1Y'],[0,'All']], T = [['candle','Candles'],['bar','Bars'],['line','Line']];
-  return `<div class="card" style="margin-top:12px"><h3>${title}</h3><div class="toolbar"><div class="seg" id="lwcRange">${R.map(([v,l]) => `<button data-v="${v}" class="${CHART.range===v?'on':''}">${l}</button>`).join('')}</div><div class="seg" id="lwcType">${T.map(([v,l]) => `<button data-v="${v}" class="${CHART.type===v?'on':''}">${l}</button>`).join('')}</div></div><div class="ohlc" id="lwcLegend"></div><div id="lwc" style="height:360px"></div><div class="sub" style="margin-top:6px">Drag to move through time, pinch to zoom, press and hold for the crosshair.</div></div>`;
+  return `<div class="card" style="margin-top:12px"><h3>${title}</h3><div class="toolbar"><div class="seg" id="lwcRange">${R.map(([v,l]) => `<button data-v="${v}" class="${CHART.range===v?'on':''}">${l}</button>`).join('')}</div><div class="seg" id="lwcType">${T.map(([v,l]) => `<button data-v="${v}" class="${CHART.type===v?'on':''}">${l}</button>`).join('')}</div><button class="pro-open" onclick="proChart()" aria-label="Open the full-screen chart">⛶ Full screen · Fib · analysis</button></div><div class="ohlc" id="lwcLegend"></div><div id="lwc" style="height:360px"></div><div class="sub" style="margin-top:6px">Drag to move through time, pinch to zoom, press and hold for the crosshair. Double-tap the chart for full screen with Fibonacci, indicators and a chart read.</div></div>`;
 }
 function candleChart(id, ch){
   const el = document.getElementById(id); if (!el || !ch) return;
@@ -1269,8 +1270,162 @@ function candleChart(id, ch){
   show(hist.length-1);
   chart.subscribeCrosshairMove(p => { const i = p && p.time != null ? byDay.get(typeof p.time === 'string' ? p.time : `${p.time.year}-${String(p.time.month).padStart(2,'0')}-${String(p.time.day).padStart(2,'0')}`) : undefined; show(i === undefined ? hist.length-1 : i); });
   new ResizeObserver(() => chart.applyOptions({width: el.clientWidth})).observe(el);
+  el.ondblclick = () => proChart();
   const wire = (sel, key, num) => { const s = document.querySelector(sel); if (!s) return; s.querySelectorAll('button').forEach(b => { b.classList.toggle('on', String(CHART[key]) === b.dataset.v); b.onclick = () => { CHART[key] = num ? +b.dataset.v : b.dataset.v; candleChart(CHART.id, CHART.src); }; }); };
   wire('#lwcRange', 'range', true); wire('#lwcType', 'type', false);
+}
+/* ───────── PRO CHART: full-screen workspace with indicators, Fibonacci and a written read ───────── */
+const PRO = Object.assign({range:130, type:'candle', vol:true, sma20:false, sma50:true, sma200:true, ema:false, bb:false, fib:true, fibx:false, sr:true, rsi:true, macd:false, fc:true, fibLook:130, manual:null},
+  (() => { try { return JSON.parse(localStorage.getItem('pro_chart') || '{}'); } catch(e){ return {}; } })());
+const proSave = () => { try { const {manual, ...k} = PRO; localStorage.setItem('pro_chart', JSON.stringify(k)); } catch(e){} };
+const FIB_R = [0, .236, .382, .5, .618, .786, 1], FIB_X = [1.272, 1.618, 2, 2.618];
+function sma(v, n){ const o = []; let s = 0; for (let i = 0; i < v.length; i++){ s += v[i]; if (i >= n) s -= v[i-n]; o.push(i >= n-1 ? s/n : null); } return o; }
+function ema(v, n){ const o = [], k = 2/(n+1); let e = null; for (let i = 0; i < v.length; i++){ e = e == null ? v[i] : v[i]*k + e*(1-k); o.push(i >= n-1 ? e : null); } return o; }
+function rsiS(v, n=14){ const o = [null]; let up = 0, dn = 0; for (let i = 1; i < v.length; i++){ const d = v[i]-v[i-1], u = Math.max(d,0), w = Math.max(-d,0);
+  if (i <= n){ up += u/n; dn += w/n; o.push(i === n ? 100 - 100/(1 + up/(dn||1e-9)) : null); } else { up = (up*(n-1)+u)/n; dn = (dn*(n-1)+w)/n; o.push(100 - 100/(1 + up/(dn||1e-9))); } } return o; }
+function stdev(v, n){ const m = sma(v, n); return v.map((_, i) => { if (m[i] == null) return null; let s = 0; for (let j = i-n+1; j <= i; j++) s += (v[j]-m[i])**2; return Math.sqrt(s/n); }); }
+function swings(h, l, look){ const n = h.length, a = Math.max(0, n - look); let hi = a, lo = a;
+  for (let i = a; i < n; i++){ if (h[i] > h[hi]) hi = i; if (l[i] < l[lo]) lo = i; } return {hi, lo}; }
+function pivots(h, l, w=5, look=260){ const n = h.length, out = []; for (let i = Math.max(w, n-look); i < n-w; i++){
+  let isH = true, isL = true; for (let j = i-w; j <= i+w; j++){ if (h[j] > h[i]) isH = false; if (l[j] < l[i]) isL = false; }
+  if (isH) out.push({i, p:h[i], t:'r'}); if (isL) out.push({i, p:l[i], t:'s'}); } return out; }
+function proRead(D, lv){
+  const c = D.c, n = c.length - 1, p = c[n], s50 = D.s50[n], s200 = D.s200[n], r = D.rsi[n], m = D.macd, out = [];
+  const tone = (x, t) => out.push({t, x});
+  if (s50 && s200){ const up = p > s50 && s50 > s200, dn = p < s50 && s50 < s200;
+    tone(up ? 'up' : dn ? 'dn' : '', up ? `Uptrend: price is above the 50-day (${px(s50)}) and the 50-day is above the 200-day (${px(s200)}).` : dn ? `Downtrend: price is below the 50-day (${px(s50)}) and the 50-day is below the 200-day (${px(s200)}).` : `Mixed trend: price ${p > s200 ? 'above' : 'below'} the 200-day (${px(s200)}) but ${p > s50 ? 'above' : 'below'} the 50-day (${px(s50)}).`);
+    for (let k = n; k > n - 30 && k > 0; k--){ const a = D.s50[k]-D.s200[k], b = D.s50[k-1]-D.s200[k-1]; if (a != null && b != null && Math.sign(a) !== Math.sign(b)){ tone(a > 0 ? 'up' : 'dn', `${a > 0 ? 'Golden cross' : 'Death cross'} ${n-k} trading days ago: the 50-day moved ${a > 0 ? 'above' : 'below'} the 200-day.`); break; } } }
+  if (r != null) tone(r > 70 ? 'dn' : r < 30 ? 'up' : '', `RSI is ${r.toFixed(0)}: ${r > 70 ? 'overbought, rallies this stretched often pause' : r < 30 ? 'oversold, sell-offs this stretched often bounce, but can keep going in a downtrend' : r > 55 ? 'buyers in control' : r < 45 ? 'sellers in control' : 'neutral'}.`);
+  if (m.line[n] != null && m.sig[n] != null){ const x = m.line[n] - m.sig[n], y = m.line[n-1] - m.sig[n-1];
+    tone(x > 0 ? 'up' : 'dn', `MACD is ${x > 0 ? 'above' : 'below'} its signal line${Math.sign(x) !== Math.sign(y) ? ' and just crossed today' : ''}, momentum ${x > 0 ? 'improving' : 'fading'}.`); }
+  if (D.bbU[n]){ const w = (D.bbU[n]-D.bbL[n])/D.bbM[n]; tone('', `Bollinger bands are ${(w*100).toFixed(1)}% wide; price is ${p > D.bbU[n] ? 'above the upper band (stretched)' : p < D.bbL[n] ? 'below the lower band (stretched)' : `${(((p-D.bbL[n])/(D.bbU[n]-D.bbL[n]))*100).toFixed(0)}% of the way up the band`}.`); }
+  if (lv && lv.length){ const below = lv.filter(x => x.p < p).sort((a,b) => b.p - a.p)[0], above = lv.filter(x => x.p > p).sort((a,b) => a.p - b.p)[0];
+    tone('', `Nearest Fibonacci support ${below ? `${below.l} at ${px(below.p)} (${((below.p/p-1)*100).toFixed(1)}%)` : 'none below'}; resistance ${above ? `${above.l} at ${px(above.p)} (+${((above.p/p-1)*100).toFixed(1)}%)` : 'none above'}.`); }
+  const hi = Math.max(...D.h.slice(-252)), lo = Math.min(...D.l.slice(-252));
+  tone('', `52-week range ${px(lo)} to ${px(hi)}; price is ${((p/hi-1)*100).toFixed(1)}% from the high and ${((p/lo-1)*100).toFixed(1)}% above the low.`);
+  const score = out.reduce((s, o) => s + (o.x === 'up' ? 1 : o.x === 'dn' ? -1 : 0), 0);
+  return {lines: out, score};
+}
+async function proChart(){
+  const ch = CHART.src; if (!ch || !window.LightweightCharts) return;
+  const tk = (location.hash.match(/^#t\/([^/]+)/) || [])[1] || (location.hash === '#spx' ? 'S&P 500' : '');
+  const day = s => String(s).slice(0,10), seen = new Set();
+  const H = ch.history.filter(r => { const d = day(r[0]); if (seen.has(d)) return false; seen.add(d); return true; });
+  const T = H.map(r => day(r[0])), o = H.map(r => r[1]), h = H.map(r => r[2]), l = H.map(r => r[3]), c = H.map(r => r[4]), v = H.map(r => r[5]||0);
+  const e12 = ema(c, 12), e26 = ema(c, 26), line = c.map((_, i) => e12[i] != null && e26[i] != null ? e12[i]-e26[i] : null);
+  const sigRaw = ema(line.map(x => x ?? 0), 9), sig = line.map((x, i) => x == null || i < 34 ? null : sigRaw[i]);
+  const sd = stdev(c, 20), m20 = sma(c, 20);
+  const D = {c, h, l, s50: sma(c, 50), s200: sma(c, 200), rsi: rsiS(c), macd:{line, sig}, bbM:m20, bbU:m20.map((x,i) => x == null ? null : x + 2*sd[i]), bbL:m20.map((x,i) => x == null ? null : x - 2*sd[i])};
+  const R = await get('research.json').catch(() => null), AI = R && R.ratings && R.ratings[tk];
+  const ov = document.createElement('div'); ov.id = 'proOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:90;background:var(--bg);display:flex;flex-direction:column';
+  const tg = (k, label) => `<button class="pro-t ${PRO[k]?'on':''}" data-k="${k}">${label}</button>`;
+  ov.innerHTML = `<style>.pro-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;border-bottom:1px solid var(--line)}
+    .pro-t{border:1px solid var(--line2);background:none;color:var(--ink2);border-radius:8px;padding:6px 10px;font:600 12.5px inherit;font-family:inherit;cursor:pointer;min-height:34px}.pro-t.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+    .pro-main{flex:1;display:flex;min-height:0;overflow:hidden}.pro-charts{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;overflow:hidden}#proMain,#proRsi,#proMacd{overflow:hidden;min-width:0;width:100%}.pro-side{width:340px;border-left:1px solid var(--line);overflow-y:auto;padding:14px}
+    @media(max-width:900px){.pro-main{flex-direction:column}.pro-side{width:auto;border-left:0;border-top:1px solid var(--line);max-height:30vh}.pro-bar{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.pro-bar::-webkit-scrollbar{display:none}.pro-bar>*{flex:0 0 auto}.pro-charts{min-height:52vh}#proRsi{height:80px!important}#proMacd{height:90px!important}}
+    .pro-leg{position:absolute;left:10px;top:8px;z-index:3;font-size:12px;color:var(--ink2);pointer-events:none;line-height:1.6}.pro-leg b{color:var(--ink)}
+    .pro-r{display:flex;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.45}.pro-r i{flex:0 0 8px;height:8px;border-radius:50%;margin-top:6px;background:var(--line2)}.pro-r i.up{background:var(--up)}.pro-r i.dn{background:var(--dn)}
+    .pro-fl{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0}#proClose{position:absolute;right:10px;top:calc(8px + env(safe-area-inset-top,0px));z-index:5;background:var(--bg)}.pro-bar:first-of-type{padding-right:60px}</style>
+    <div class="pro-bar"><b style="font-size:17px;margin-right:6px">${esc(tk || 'Chart')}</b>
+      ${segHTML('proRange', [[22,'1M'],[66,'3M'],[130,'6M'],[260,'1Y'],[780,'3Y'],[0,'All']], PRO.range)}
+      ${segHTML('proType', [['candle','Candles'],['line','Line']], PRO.type)}
+      <span style="flex:1"></span><button class="pro-t" id="proClose" style="font-size:18px;padding:2px 12px" aria-label="Close full screen">✕</button></div>
+    <div class="pro-bar" style="padding-top:6px">${tg('vol','Volume')}${tg('sma20','SMA 20')}${tg('sma50','SMA 50')}${tg('sma200','SMA 200')}${tg('ema','EMA 9/21')}${tg('bb','Bollinger')}${tg('sr','Support/resistance')}${tg('fib','Fib retracement')}${tg('fibx','Fib extensions')}
+      <button class="pro-t ${PRO.manual===false?'on':''}" id="proDraw">✎ Draw Fib</button>${tg('rsi','RSI')}${tg('macd','MACD')}${(ch.future||[]).length ? tg('fc','Kronos forecast') : ''}</div>
+    <div class="pro-main"><div class="pro-charts"><div class="pro-leg" id="proLeg"></div><div id="proMain" style="flex:1;min-height:200px"></div><div id="proRsi" style="height:110px;border-top:1px solid var(--line)"></div><div id="proMacd" style="height:120px;border-top:1px solid var(--line)"></div></div>
+      <div class="pro-side" id="proSide"></div></div>`;
+  document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+  let charts = [], drawPts = [];
+  const opts = (el) => ({width: el.clientWidth, height: el.clientHeight, layout:{background:{color:'transparent'}, textColor:C.ink2, fontFamily:"'Space Grotesk', system-ui, sans-serif", fontSize:11},
+    grid:{vertLines:{color:'rgba(255,255,255,.04)'}, horzLines:{color:'rgba(255,255,255,.04)'}}, rightPriceScale:{borderColor:C.line, minimumWidth:76}, timeScale:{borderColor:C.line, rightOffset:4},
+    crosshair:{mode:0, vertLine:{color:'#777', labelBackgroundColor:'#333'}, horzLine:{color:'#777', labelBackgroundColor:'#333'}}});
+  const pts = (arr) => arr.map((x, i) => x == null ? {time:T[i]} : {time:T[i], value:x});   // whitespace keeps every pane on the same bar index
+  const futT = (ch.future||[]).map(day).filter(d => !seen.has(d));
+  const pad = s2 => { if (PRO.fc && futT.length) s2.addLineSeries({visible:false, priceLineVisible:false, lastValueVisible:false}).setData(T.map(t => ({time:t})).concat(futT.map(t => ({time:t})))); };
+  const render = () => {
+    charts.forEach(x => { try { x.remove(); } catch(e){} }); charts = [];
+    const el = $('#proMain'); $('#proRsi').style.display = PRO.rsi ? '' : 'none'; $('#proMacd').style.display = PRO.macd ? '' : 'none';
+    const chart = LightweightCharts.createChart(el, opts(el)); charts.push(chart);
+    let main;
+    if (PRO.type === 'candle'){ main = chart.addCandlestickSeries({upColor:C.up, downColor:C.dn, borderUpColor:C.up, borderDownColor:C.dn, wickUpColor:C.up, wickDownColor:C.dn}); main.setData(H.map((r,i) => ({time:T[i], open:o[i], high:h[i], low:l[i], close:c[i]}))); }
+    else { main = chart.addAreaSeries({lineColor:C.ink, lineWidth:2, topColor:'rgba(242,242,242,.18)', bottomColor:'rgba(242,242,242,0)'}); main.setData(pts(c)); }
+    if (PRO.vol){ const vs = chart.addHistogramSeries({priceFormat:{type:'volume'}, priceScaleId:'vol', lastValueVisible:false, priceLineVisible:false}); chart.priceScale('vol').applyOptions({scaleMargins:{top:0.85, bottom:0}});
+      vs.setData(H.map((r,i) => ({time:T[i], value:v[i], color:c[i] >= o[i] ? 'rgba(198,244,50,.28)' : 'rgba(255,122,89,.28)'}))); }
+    const ln = (arr, color, w=1.5, style=0) => { const s = chart.addLineSeries({color, lineWidth:w, lineStyle:style, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false}); s.setData(pts(arr)); return s; };
+    if (PRO.sma20) ln(m20, '#4FD1C5'); if (PRO.sma50) ln(D.s50, '#FFB547'); if (PRO.sma200) ln(D.s200, '#B98CFF', 2);
+    if (PRO.ema){ ln(ema(c, 9), '#7FB2FF', 1); ln(ema(c, 21), '#FF8FC7', 1); }
+    if (PRO.bb){ ln(D.bbU, 'rgba(127,178,255,.7)', 1, 2); ln(D.bbL, 'rgba(127,178,255,.7)', 1, 2); ln(m20, 'rgba(127,178,255,.35)', 1); }
+    if (PRO.fc && (ch.future||[]).length){ const fut = ch.future.map(day).filter(d => !seen.has(d)), B = ch.bands || {}, n = c.length - 1;
+      const f = (vals, col, w, st) => { if (!vals) return; const s = chart.addLineSeries({color:col, lineWidth:w, lineStyle:st, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false});
+        s.setData([{time:T[n], value:c[n]}].concat(fut.map((d,i) => ({time:d, value:vals[i]})).filter(p => p.value != null))); };
+      f(B['90'], 'rgba(198,244,50,.55)', 1, 2); f(B['10'], 'rgba(255,122,89,.55)', 1, 2); f(B['50'], C.gold2 || C.ink, 2, 0); }
+    // Fibonacci
+    let lv = [];
+    const fibFrom = (a, b, label) => { const up = b.i > a.i ? b.p > a.p : a.p > b.p, hiP = Math.max(a.p, b.p), loP = Math.min(a.p, b.p), rng = hiP - loP;
+      const add = (r, ext) => { const p = up ? hiP - r*rng : loP + r*rng; if (p <= 0) return; lv.push({l:(r*100).toFixed(1).replace('.0','') + '%', p, ext});
+        main.createPriceLine({price:p, color: ext ? 'rgba(127,178,255,.8)' : r === .618 || r === .5 ? 'rgba(255,181,71,.95)' : 'rgba(255,181,71,.55)', lineWidth: r === .618 ? 2 : 1, lineStyle: ext ? 2 : 0, axisLabelVisible:true, title:`${label} ${(r*100).toFixed(1).replace('.0','')}%`}); };
+      if (PRO.fib) FIB_R.forEach(r => add(r, false)); if (PRO.fibx) FIB_X.forEach(r => add(r, true));
+      return up; };
+    const look = PRO.range || c.length, sw = swings(h, l, look);
+    let fibInfo = null;
+    if (PRO.manual && PRO.manual.length === 2){ fibFrom(PRO.manual[0], PRO.manual[1], 'Fib'); fibInfo = {manual:true, a:PRO.manual[0], b:PRO.manual[1]}; }
+    else if (PRO.fib || PRO.fibx){ const A = sw.hi < sw.lo ? {i:sw.hi, p:h[sw.hi]} : {i:sw.lo, p:l[sw.lo]}, Bp = sw.hi < sw.lo ? {i:sw.lo, p:l[sw.lo]} : {i:sw.hi, p:h[sw.hi]};
+      const up = fibFrom(A, Bp, 'Fib'); fibInfo = {manual:false, a:A, b:Bp, up}; }
+    const marks = [];
+    if (fibInfo){ marks.push({time:T[fibInfo.a.i], position: fibInfo.a.p >= fibInfo.b.p ? 'aboveBar' : 'belowBar', color:'#FFB547', shape:'circle', text:'A'}, {time:T[fibInfo.b.i], position: fibInfo.b.p >= fibInfo.a.p ? 'aboveBar' : 'belowBar', color:'#FFB547', shape:'circle', text:'B'}); }
+    let srLv = [];
+    if (PRO.sr){ const P = pivots(h, l, 5, Math.max(look, 130)), p = c[c.length-1];
+      const res = P.filter(x => x.t === 'r' && x.p > p).sort((a,b) => a.p - b.p).slice(0, 2), sup = P.filter(x => x.t === 's' && x.p < p).sort((a,b) => b.p - a.p).slice(0, 2);
+      [...res, ...sup].forEach(x => { srLv.push(x); main.createPriceLine({price:x.p, color: x.t === 'r' ? 'rgba(255,122,89,.75)' : 'rgba(198,244,50,.75)', lineWidth:1, lineStyle:3, axisLabelVisible:true, title: x.t === 'r' ? 'Resistance' : 'Support'}); }); }
+    marks.sort((a,b) => a.time < b.time ? -1 : 1); main.setMarkers(marks);
+    const n = PRO.range || c.length; chart.timeScale().setVisibleLogicalRange({from: Math.max(0, c.length - n), to: c.length + ((PRO.fc && ch.future) ? ch.future.length : 0) + 3});
+    // sub panes, time-synced
+    const sub = (id, build) => { const e2 = $('#' + id); const s = LightweightCharts.createChart(e2, Object.assign(opts(e2), {timeScale:{visible: id === 'proMacd' || !PRO.macd, borderColor:C.line}})); charts.push(s); build(s); return s; };
+    const panes = [];
+    if (PRO.rsi) panes.push(sub('proRsi', s => { pad(s); const r = s.addLineSeries({color:'#B98CFF', lineWidth:1.5, priceLineVisible:false}); r.setData(pts(D.rsi));
+      [70, 30].forEach(y => r.createPriceLine({price:y, color:'#555', lineWidth:1, lineStyle:2, axisLabelVisible:false})); s.priceScale('right').applyOptions({scaleMargins:{top:.1, bottom:.1}}); }));
+    if (PRO.macd) panes.push(sub('proMacd', s => { pad(s); const hs = s.addHistogramSeries({priceLineVisible:false, lastValueVisible:false});
+      hs.setData(line.map((x,i) => x == null || sig[i] == null ? {time:T[i]} : {time:T[i], value:x - sig[i], color: x - sig[i] >= 0 ? 'rgba(198,244,50,.6)' : 'rgba(255,122,89,.6)'}));
+      s.addLineSeries({color:'#7FB2FF', lineWidth:1.5, priceLineVisible:false, lastValueVisible:false}).setData(pts(line)); s.addLineSeries({color:'#FFB547', lineWidth:1, priceLineVisible:false, lastValueVisible:false}).setData(pts(sig)); }));
+    if (panes.length) chart.applyOptions({timeScale:{visible:false}});
+    let syncing = false; [chart, ...panes].forEach(a => a.timeScale().subscribeVisibleLogicalRangeChange(r => { if (syncing || !r) return; syncing = true; [chart, ...panes].forEach(b => b !== a && b.timeScale().setVisibleLogicalRange(r)); syncing = false; }));
+    panes.forEach(p => p.timeScale().setVisibleLogicalRange(chart.timeScale().getVisibleLogicalRange()));
+    const idx = new Map(T.map((t,i) => [t, i])), leg = $('#proLeg');
+    const legend = i => { const pc = c[Math.max(0,i-1)], ch1 = c[i]/pc - 1;
+      leg.innerHTML = `${T[i]} · O <b>${px(o[i])}</b> H <b>${px(h[i])}</b> L <b>${px(l[i])}</b> C <b>${px(c[i])}</b> <b class="${cls(ch1)}">${pct(ch1,2)}</b>${PRO.rsi && D.rsi[i] ? ` · RSI <b>${D.rsi[i].toFixed(0)}</b>` : ''}${PRO.manual === false ? `<br><b style="color:#FFB547">Draw Fib: tap the ${drawPts.length ? 'second' : 'first'} point (a swing high or low)</b>` : ''}`; };
+    legend(c.length-1);
+    chart.subscribeCrosshairMove(p => { const t = p && p.time ? (typeof p.time === 'string' ? p.time : `${p.time.year}-${String(p.time.month).padStart(2,'0')}-${String(p.time.day).padStart(2,'0')}`) : null; legend(t && idx.has(t) ? idx.get(t) : c.length-1); });
+    chart.subscribeClick(p => { if (PRO.manual !== false || !p || !p.time || !p.point) return; const t = typeof p.time === 'string' ? p.time : `${p.time.year}-${String(p.time.month).padStart(2,'0')}-${String(p.time.day).padStart(2,'0')}`, i = idx.get(t); if (i == null) return;
+      const y = main.coordinateToPrice(p.point.y), snap = Math.abs(y - h[i]) < Math.abs(y - l[i]) ? h[i] : l[i]; drawPts.push({i, p:snap});
+      if (drawPts.length === 2){ PRO.manual = drawPts.slice(); drawPts = []; PRO.fib = true; render(); } else legend(c.length-1); });
+    side(lv, srLv, fibInfo);
+    try { ov._ro && ov._ro.disconnect(); } catch(e){}
+    const fit = () => charts.forEach(x => { const e3 = x.chartElement().parentElement; x.applyOptions({width:e3.clientWidth, height:e3.clientHeight}); });
+    const ro = new ResizeObserver(fit); ['#proMain','#proRsi','#proMacd'].forEach(q => ro.observe($(q))); ov._ro = ro; fit();
+  };
+  const side = (lv, srLv, fibInfo) => {
+    const rd = proRead(D, lv), sc = rd.score, verdict = sc >= 2 ? ['up','Leaning bullish'] : sc <= -2 ? ['dn','Leaning bearish'] : ['','Mixed, no clear edge'];
+    const p = c[c.length-1];
+    $('#proSide').innerHTML = `<div class="sub">Chart read · rule-based, from the indicators</div><div style="font-size:22px;font-weight:700;margin:4px 0 8px" class="${verdict[0]}">${verdict[1]}</div>
+      ${rd.lines.map(x => `<div class="pro-r"><i class="${x.x}"></i><span>${esc(x.t)}</span></div>`).join('')}
+      ${lv.length ? `<div class="sec-title" style="font-size:16px;margin:18px 0 6px">Fibonacci levels<small>${fibInfo && fibInfo.manual ? 'Drawn by you' : `Auto: swing ${fibInfo && fibInfo.up ? 'low to high' : 'high to low'} in the visible ${PRO.range ? PRO.range + ' days' : 'history'}`} · A ${px(fibInfo.a.p)} (${T[fibInfo.a.i]}) → B ${px(fibInfo.b.p)} (${T[fibInfo.b.i]})</small></div>
+        ${lv.slice().sort((a,b) => b.p - a.p).map(x => `<div class="pro-fl"><span style="color:${x.ext ? '#7FB2FF' : '#FFB547'}">${x.ext ? 'Ext ' : ''}${x.l}</span><span>${px(x.p)} <span class="${x.p > p ? 'up' : 'dn'}" style="font-size:11.5px">${((x.p/p-1)*100).toFixed(1)}%</span></span></div>`).join('')}
+        ${PRO.manual ? '<button class="pro-t" id="proAuto" style="margin-top:8px">Back to auto Fib</button>' : ''}
+        <div class="sub" style="margin-top:6px">Traders watch 38.2%, 50% and 61.8% most. They are reference points, not guarantees.</div>` : ''}
+      ${srLv.length ? `<div class="sec-title" style="font-size:16px;margin:18px 0 6px">Support and resistance<small>recent swing highs and lows</small></div>${srLv.sort((a,b)=>b.p-a.p).map(x => `<div class="pro-fl"><span class="${x.t==='r'?'dn':'up'}">${x.t==='r'?'Resistance':'Support'} · ${T[x.i]}</span><span>${px(x.p)}</span></div>`).join('')}` : ''}
+      ${AI ? `<div class="sec-title" style="font-size:16px;margin:18px 0 6px">AI analyst view<small>${esc(AI.date)} · ${esc(AI.model||'')}</small></div><div style="font-size:18px;font-weight:700" class="${/buy|over/i.test(AI.rating)?'up':/sell|under/i.test(AI.rating)?'dn':''}">${esc(AI.rating)}</div><p class="sub" style="font-size:13px;line-height:1.5">${esc(AI.summary||'')}</p>` : ''}
+      ${(ch.bands||{})['50'] ? `<div class="sec-title" style="font-size:16px;margin:18px 0 6px">Kronos forecast</div><p class="sub" style="font-size:13px;line-height:1.5">Middle path ends near ${px(ch.bands['50'][ch.bands['50'].length-1])}; 80% of simulated paths end between ${px((ch.bands['10']||[]).slice(-1)[0])} and ${px((ch.bands['90']||[]).slice(-1)[0])}.</p>` : ''}
+      <div class="sub" style="margin-top:16px">Not financial advice. Indicators describe the past; they don't predict the future on their own.</div>`;
+    const ba = $('#proAuto'); if (ba) ba.onclick = () => { PRO.manual = null; render(); };
+  };
+  const close = () => { charts.forEach(x => { try { x.remove(); } catch(e){} }); try { ov._ro && ov._ro.disconnect(); } catch(e){} ov.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', kd); };
+  const kd = e => { if (e.key === 'Escape') close(); }; document.addEventListener('keydown', kd);
+  $('#proClose').onclick = close;
+  ov.querySelectorAll('.pro-t[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k; PRO[k] = !PRO[k]; if ((k === 'fib' || k === 'fibx') && !PRO.fib && !PRO.fibx) PRO.manual = null; b.classList.toggle('on', PRO[k]); proSave(); render(); });
+  $('#proDraw').onclick = e => { PRO.manual = PRO.manual === false ? null : false; drawPts = []; e.currentTarget.classList.toggle('on', PRO.manual === false); render(); };
+  segWire('proRange', x => { PRO.range = +x; PRO.manual = null; proSave(); render(); }); segWire('proType', x => { PRO.type = x; proSave(); render(); });
+  render();
 }
 function setupNeeded(){ location.hash = 'setup'; }
 /* ---------- Daily brief, fear and greed, S&P 500, strategy league ---------- */
@@ -1319,7 +1474,7 @@ async function viewSpx(){
   const [X, RG] = await Promise.all([get('spx.json'), get('regime.json')]);
   if (!X || !X.stats){ $('#view').innerHTML = '<div class="empty">The S&P 500 page fills in after the next market close.</div>'; return; }
   const S = X.stats, I = (LATEST && LATEST.indices || []).find(a => a.ticker === 'SPY');
-  let h = `<div class="lede"><div class="sub" style="margin-bottom:6px">S&P 500, tracked through the SPY fund · close of ${dateS(S.date)}</div><h1>${px(S.last)}, ${S.from_high < -0.002 ? Math.abs(S.from_high*100).toFixed(1) + '% below its record' : 'at a record high'}</h1><p>${esc(X.insights[1]||'')}</p></div>`;
+  let h = `<div class="lede"><div class="sub" style="margin-bottom:6px">${X.source==='^GSPC'?'S&P 500 index':'S&P 500, tracked through the SPY fund (about 1/10 of the index)'} · close of ${dateS(S.date)}</div><h1>${px(S.last)}, ${S.from_high < -0.002 ? Math.abs(S.from_high*100).toFixed(1) + '% below its record' : 'at a record high'}</h1><p>${esc(X.insights[1]||'')}</p></div>`;
   h += `<div class="grid g4 keep2">${[['Last day', S.d1, 2], ['Five days', S.d5, 1], ['One month', S.d21, 1], ['This year', S.ytd, 1]].map(([l,v,d]) => `<div class="card"><h3>${l}</h3><div class="hero ${cls(v)}" style="font-size:40px">${sgn(v, d)}</div></div>`).join('')}</div>`;
   h += chartCard('Price');
   if (I) h += `<div class="card" style="margin-top:12px"><h3>The model's forecast</h3><div class="idea click" data-go="t/SPY"><span><b>Next 5 trading days</b><small style="display:block;color:var(--muted)">${I.agree_count} of ${I.samples} simulated futures point ${I.direction}. Likely range ${px(I.ranges?.week?.low)} to ${px(I.ranges?.week?.high)}.</small></span><span class="big ${cls(I.median_return)}">${sgn(I.median_return)}</span></div></div>`;
@@ -1336,7 +1491,7 @@ async function viewSpx(){
   $('#view').innerHTML = h; ecClear(); goWire($('#view'));
   candleChart('lwc', {history: X.chart, future: [], bands: {}});
   const B = X.breadth, lab = B.dates.map(d => d.slice(5)), ax = {type:'category', data:lab, axisLine:{lineStyle:{color:C.line}}, axisLabel:{color:C.muted, interval:Math.floor(lab.length/4)}};
-  const spy = {name:'S&P 500 (SPY)', type:'line', yAxisIndex:1, data:B.spy, showSymbol:false, lineStyle:{color:C.ink, width:1.5, opacity:.6}, itemStyle:{color:C.ink}};
+  const spy = {name:X.source==='^GSPC'?'S&P 500':'S&P 500 (SPY)', type:'line', yAxisIndex:1, data:B.spy, showSymbol:false, lineStyle:{color:C.ink, width:1.5, opacity:.6}, itemStyle:{color:C.ink}};
   const y2 = {type:'value', scale:true, splitLine:{show:false}, axisLabel:{color:C.muted}}, yl = {splitLine:{lineStyle:{color:'rgba(255,255,255,.06)'}}, axisLabel:{color:C.muted}};
   let underC = null;
   const under = () => { if (underC){ try { underC.dispose(); } catch(e){} ECS = ECS.filter(c => c !== underC); }
