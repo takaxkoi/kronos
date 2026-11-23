@@ -1666,11 +1666,12 @@ const bigMoney = v => v >= 1e9 ? '$' + (v/1e9).toFixed(1) + ' billion' : v >= 1e
 let CAL = {only:'High'};
 async function viewCalendar(){
   const [E, ER, B] = await Promise.all([get('econ.json'), get('earnings.json'), get('brief.json')]);
-  const ev = (E && E.events) || [], er = ((ER && ER.rows) || []).filter(r => r.next_days != null && r.next_days <= 45);
+  const ev = (E && E.events) || [], all = (ER && ER.rows) || [], er = all.filter(r => r.watch !== false && r.next_days != null && r.next_days <= 45), wk = all.filter(r => r.watch === false && r.next_days != null && r.next_days <= 7).sort((x,y) => x.next_days - y.next_days || y.typical - x.typical).slice(0, 40);
   const today = new Date().toLocaleDateString('en-CA', {timeZone:'America/New_York'}), todays = ev.filter(x => x.date === today && x.impact === 'High');
   let h = `<div class="lede"><h1>${todays.length ? 'Today: ' + esc(todays.map(x => x.title).join(', ')) : ev.length ? 'Nothing major is scheduled today.' : 'No calendar yet.'}</h1><p>${ev.length ? 'Scheduled US reports for the next 10 days. Markets move when a number lands far from what was expected, so the expected figure matters as much as the date.' : esc((E && E.status) || 'The economic calendar loads with the next morning run.')}</p></div>`;
   if (ev.length) h += `<div class="sec-title">Economic reports<small>Times are US Eastern</small></div><div class="card"><div class="toolbar">${segHTML('calOnly', [['High','Big ones'],['All','Everything']], CAL.only)}</div><div id="calList"></div><div class="sub" style="margin-top:8px">Source: ${esc(E.source||'')}, updated ${ago(E.generated)}.${E.status && E.status !== 'ok' ? ' ' + esc(E.status) : ''}</div></div>`;
   h += `<div class="sec-title">Earnings on your watchlist<small>With how far each stock usually moves on the day</small></div><div class="card">${er.length ? er.map(r => `<div class="idea click" data-go="earn"><span><b>${esc(r.ticker)}</b><small style="display:block;color:var(--muted)">${dateS(r.next)} ${esc(r.next_when||'')}, in ${r.next_days} day${r.next_days===1?'':'s'}</small></span><span style="text-align:right"><span class="big">±${(r.typical*100).toFixed(1)}%</span><small style="display:block;color:var(--muted)">usual move</small></span></div>`).join('') : '<div class="empty">No watchlist stock reports in the next six weeks.</div>'}</div>`;
+  if (wk.length) h += `<div class="sec-title">S&P 500 companies reporting this week<small>${wk.length} shown, with each one's usual move</small></div><div class="card">${wk.map(r => `<div class="idea click" data-go="t/${esc(r.ticker)}"><span><b>${esc(r.ticker)}</b> <small style="color:var(--muted)">${esc(r.name||'')}</small><small style="display:block;color:var(--muted)">${dateS(r.next)} ${esc(r.next_when||'')}</small></span><span style="text-align:right"><span class="big">±${(r.typical*100).toFixed(1)}%</span><small style="display:block;color:var(--muted)">usual move</small></span></div>`).join('')}</div>`;
   const cs = B && (B.sections||[]).find(s => s.key === 'calendar');
   if (cs) h += `<div class="sec-title">Other companies reporting soon</div><div class="card brief">${cs.lines.map(l => `<div class="bl ${l.go?'click':''}" ${l.go?`data-go="${esc(l.go)}"`:''}><i class="${l.tone||''}"></i><span>${esc(l.t)}</span></div>`).join('')}</div>`;
   $('#view').innerHTML = h; goWire($('#view'));
@@ -1698,19 +1699,32 @@ async function viewInsiders(){
   draw();
 }
 
-let ERO = null;
+let ERO = null, ERV = 'mine', ERQ = '';
 async function viewEarn(){
   const D = await get('earnings.json');
   if (!D || !(D.rows||[]).length){ $('#view').innerHTML = `<div class="empty">${esc((D && D.status) || 'Earnings history appears after the nightly data run.')}</div>`; return; }
-  $('#view').innerHTML = `<div class="lede"><h1>${esc(D.headline)}</h1><p>How each of your stocks has moved the day after reporting, over its last several years of reports. Beating estimates does not guarantee a rise, and the usual move tells you how much risk you carry into the report. Tap a stock for every past reaction.</p></div><div class="card" id="erList"></div><div class="sub" style="margin:14px 2px">${esc(D.note)}</div>`;
-  const draw = () => { $('#erList').innerHTML = D.rows.map(r => `<div class="idea click" data-k="${esc(r.ticker)}"><span><b>${esc(r.ticker)}</b><small style="display:block;color:var(--muted);line-height:1.4">${r.next ? 'Next report ' + dateS(r.next) + ' (' + r.next_days + ' days)' : 'Next date not set'} · rose ${r.up} of ${r.n} times</small></span><span style="text-align:right"><span class="big">±${(r.typical*100).toFixed(1)}%</span><small style="display:block;color:var(--muted)">usual move</small></span></div>` +
-      (ERO === r.ticker ? `<div class="lgx"><p>${esc(r.read)} Best day ${sgn(r.best)}, worst ${sgn(r.worst)}.${r.after_beat != null ? ' Average after a beat: ' + sgn(r.after_beat) + '.' : ''}${r.after_miss != null ? ' Average after a miss: ' + sgn(r.after_miss) + '.' : ''}</p><div id="erC_${esc(r.ticker)}"></div><button class="btn more" data-go="t/${esc(r.ticker)}">Open ${esc(r.ticker)}</button></div>` : '')).join('');
+  const M = D.market || {};
+  $('#view').innerHTML = `<div class="lede"><h1>${esc(D.headline)}</h1><p>How ${D.rows.length} stocks have moved the day after reporting, over ${M.reports ? M.reports.toLocaleString() : 'their'} past reports. The usual move is about ${M.typical != null ? (M.typical*100).toFixed(1) + '%' : 'several percent'}, up or down. ${M.beat_fell != null ? 'Beating estimates was no guarantee: the stock still fell after ' + pct0(M.beat_fell) + ' of beats.' : ''}</p></div>
+    <div class="card"><input id="erQ" type="search" placeholder="Find a stock" value="${esc(ERQ)}" style="width:100%;min-height:46px;border-radius:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:16px;padding:0 14px;margin-bottom:10px">
+    <div class="toolbar">${segHTML('erSeg', [['mine','Your stocks'],['soon','Reporting soon'],['big','Biggest movers'],['rise','Usually rise'],['fell','Beat but fell']], ERV)}</div><div class="sub" id="erHint" style="margin:8px 0 2px"></div><div id="erList"></div></div><div class="sub" style="margin:14px 2px">${esc(D.note)}</div>`;
+  const hint = {mine:'The stocks on your watchlist, soonest report first.', soon:'Every company reporting in the next two weeks, soonest first.', big:'The stocks that swing hardest on results.', rise:'Rose after the largest share of past reports (at least 12 on file).', fell:'Beat estimates most often and still dropped.'};
+  const pick = () => { const q = ERQ.trim().toUpperCase(); let R = D.rows;
+    if (q) return R.filter(r => r.ticker.startsWith(q) || (r.name||'').toUpperCase().includes(q)).slice(0, 40);
+    if (ERV === 'mine') return R.filter(r => r.watch);
+    if (ERV === 'soon') return R.filter(r => r.next_days != null && r.next_days <= 14).slice(0, 60);
+    if (ERV === 'big') return R.slice().sort((a,b) => b.typical - a.typical).slice(0, 30);
+    if (ERV === 'rise') return R.filter(r => r.n >= 12).sort((a,b) => b.up/b.n - a.up/a.n).slice(0, 30);
+    return R.filter(r => r.beats >= 8).sort((a,b) => b.fell_on_beat/b.beats - a.fell_on_beat/a.beats).slice(0, 30); };
+  const draw = () => { const R = pick(); $('#erHint').textContent = ERQ.trim() ? R.length + ' match' + (R.length === 1 ? '' : 'es') : hint[ERV];
+    $('#erList').innerHTML = R.length ? R.map(r => `<div class="idea click" data-k="${esc(r.ticker)}"><span><b>${esc(r.ticker)}</b> <small style="color:var(--muted)">${esc(r.name||'')}</small><small style="display:block;color:var(--muted);line-height:1.4">${r.next ? 'Reports ' + dateS(r.next) + (r.next_days <= 60 ? ' (' + r.next_days + ' day' + (r.next_days === 1 ? '' : 's') + ')' : '') : 'Next date not set'} · rose ${r.up} of ${r.n}${ERV === 'fell' && !ERQ.trim() ? ' · fell after ' + r.fell_on_beat + ' of ' + r.beats + ' beats' : ''}</small></span><span style="text-align:right"><span class="big">±${(r.typical*100).toFixed(1)}%</span><small style="display:block;color:var(--muted)">usual move</small></span></div>` +
+      (ERO === r.ticker ? `<div class="lgx"><p>${esc(r.read)} Best day ${sgn(r.best)}, worst ${sgn(r.worst)}.${r.after_beat != null ? ' Average after a beat: ' + sgn(r.after_beat) + '.' : ''}${r.after_miss != null ? ' Average after a miss: ' + sgn(r.after_miss) + '.' : ''}</p><div id="erC_${esc(r.ticker)}"></div><button class="btn more" data-go="t/${esc(r.ticker)}">Open ${esc(r.ticker)}</button></div>` : '')).join('') : '<div class="empty">Nothing to show here yet.</div>';
     $('#erList').querySelectorAll('[data-k]').forEach(e => e.onclick = () => { ERO = ERO === e.dataset.k ? null : e.dataset.k; draw(); }); goWire($('#erList')); ecClear();
-    const r = D.rows.find(x => x.ticker === ERO); if (!r) return; const H = r.history.slice().reverse();
-    ec('erC_' + r.ticker, {tooltip:{trigger:'axis', formatter: p => { const x = H[p[0].dataIndex]; return `<b>${x.date}</b><br>stock moved ${sgn(x.move)}<br>${x.beat == null ? 'no estimate' : x.beat ? 'beat estimates' : 'missed estimates'}${x.surprise != null ? ' by ' + Math.abs(x.surprise).toFixed(1) + '%' : ''}`; }},
-      xAxis:{type:'category', data:H.map(x => x.date.slice(2,7)), axisLine:{lineStyle:{color:C.line}}, axisLabel:{color:C.muted}}, yAxis:{type:'value', splitLine:{lineStyle:{color:'rgba(255,255,255,.06)'}}, axisLabel:{color:C.muted, formatter: v => v + '%'}},
-      series:[{type:'bar', data:H.map(x => ({value:+(x.move*100).toFixed(2), itemStyle:{color: x.move >= 0 ? C.up : C.dn, borderRadius:4}}))}]}, 220); };
-  draw();
+    const r = R.find(x => x.ticker === ERO); if (!r) return; const H = r.history.slice().reverse();
+    ec('erC_' + r.ticker, {tooltip:{trigger:'axis', formatter: p => { const x = H[p[0].dataIndex]; return `<b>${x[0]}</b><br>stock moved ${sgn(x[1])}<br>${x[2] == null ? 'no estimate' : x[2] ? 'beat estimates' : 'missed estimates'}${x[3] != null ? ' by ' + Math.abs(x[3]).toFixed(1) + '%' : ''}`; }},
+      xAxis:{type:'category', data:H.map(x => x[0].slice(2,7)), axisLine:{lineStyle:{color:C.line}}, axisLabel:{color:C.muted}}, yAxis:{type:'value', splitLine:{lineStyle:{color:'rgba(255,255,255,.06)'}}, axisLabel:{color:C.muted, formatter: v => v + '%'}},
+      series:[{type:'bar', data:H.map(x => ({value:+(x[1]*100).toFixed(2), itemStyle:{color: x[1] >= 0 ? C.up : C.dn, borderRadius:4}}))}]}, 220); };
+  draw(); segWire('erSeg', v => { ERV = v; ERQ = ''; $('#erQ').value = ''; ERO = null; draw(); });
+  $('#erQ').oninput = e => { ERQ = e.target.value; ERO = null; draw(); };
 }
 
 function regimeHTML(G){
