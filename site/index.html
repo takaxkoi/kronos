@@ -472,7 +472,7 @@ footer .wrap{display:flex;gap:10px 28px;flex-wrap:wrap;justify-content:space-bet
 const sb = window.supabase.createClient('https://stzeugbijanjwroibtmx.supabase.co', 'sb_publishable_IsJeraZpjoUXbeO8Lr-F_g_14h7UoUm');
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const DATA = 'https://raw.githubusercontent.com/takaxkoi/Trading-picker-/main/site/data/';
+const DATA = 'pub/';   // public market-wide files served with the site
 const get = f => fetch(DATA + f).then(r => r.ok ? r.json() : null).catch(() => null);
 const sg = (v, d=1) => v == null || isNaN(v) ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v*100).toFixed(d) + '%';
 const p0 = v => v == null ? '—' : Math.round(v*100) + '%';
