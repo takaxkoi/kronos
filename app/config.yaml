@@ -156,11 +156,55 @@ supabase:
 
 research:
   # AI research ratings (TradingAgents). Needs one AI key secret; GOOGLE_API_KEY (Gemini) has a free tier.
-  per_run: 3              # stocks researched per nightly run, rotating through the watchlist
+  per_run: 15             # the whole watchlist each night (about 300 AI calls, inside the free allowance)
   holding_days: 5         # trading days until a rating is graded against SPY
   debate_rounds: 1        # bull vs bear rounds (more = deeper, more AI calls)
   risk_rounds: 1
   pause_seconds: 20       # wait between stocks to stay under per-minute limits
   # provider: google      # force one provider; default = first key found
   # quick_model: gemini-3.5-flash-lite
-  # deep_model: gemini-3.8-flash
+  # Google's free plan allows only 20 calls a day on gemini-3.8-flash and one stock needs more than that,
+  # so both roles use the lite model, which has a much larger free allowance.
+  deep_model: gemini-3.5-flash-lite
+
+tickerbot:
+  # Market-wide scans (Tickerbot, secret TICKERBOT_API_KEY). q is a SQL-style WHERE over signal names;
+  # the full list of names is saved to state/tickerbot_signals.json after the first run.
+  scans:
+    - name: Oversold with heavy volume
+      why: Sharp selloffs on big volume in large companies sometimes mark capitulation and a bounce.
+      q: "rsi_14 < 30 AND relative_volume > 2 AND market_cap > 2000000000"
+      order: volume_ratio_20d
+    - name: Gap ups on volume
+      why: A stock opening well above yesterday's close on high volume usually has fresh news behind it.
+      q: "gap_up AND relative_volume > 2 AND market_cap > 1000000000"
+      order: gap_pct
+    - name: Biggest movers today (large caps)
+      why: The day's largest moves among big companies. Start here to study what is driving the market.
+      q: "market_cap > 10000000000 AND asset_class = 'stocks'"
+      order: change_1d_pct
+      limit: 15
+    - name: Unusual volume
+      why: Trading several times normal volume means big players are active, in either direction.
+      q: "relative_volume > 3 AND market_cap > 2000000000"
+      order: relative_volume
+
+quotes:
+  # Live price board (job "Live prices"). Every run a different source leads, the rest fill gaps,
+  # so no free limit runs out. Calls allowed per source per day:
+  daily_caps:
+    yahoo: 1500          # no key needed
+    finnhub: 3000        # free plan allows 60 a minute
+    tickerbot: 40        # one call covers the whole list; raise if your plan allows more
+    alpaca: 2000         # one call covers the whole list
+    alphavantage: 3      # free key is 25 a day and the data vault uses most of them
+
+news:
+  # News desk (job "News desk"). Headlines per stock and how many days back to look.
+  per_ticker: 12
+  max_age_days: 3
+
+filings:
+  # Filings Lab (SEC EDGAR, free). SEC requires automated visitors to give a name and real contact email.
+  # Example:  contact: "Lucky Smith lucky@example.com"
+  contact: "Ishmam Hossain takaxkoi@gmail.com"

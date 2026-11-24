@@ -79,3 +79,7 @@ __pycache__/
 *.pyc
 state/*.tmp
 site/data/**/*.tmp
+site/data/p/
+
+# Crypto desk snapshot: refreshed hourly and sent to Supabase, too large and too frequent to keep in git
+site/data/crypto.json

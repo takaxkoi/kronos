@@ -30,11 +30,27 @@ def save(df: pd.DataFrame) -> None:
     df.to_csv(PRED_FILE, index=False)
 
 
+FUNDS = {"ETF", "Index", ""}
+RULES = ("Rules since Nov 22, 2026: hourly calls are not counted, and the app no longer calls single stocks down. "
+         "Both kinds were right less than half the time, and in 10 years of prices no simple setup had big stocks falling more often than rising.")
+
+
+def follows_rules(cls, interval, direction, sector) -> bool:
+    """Which calls count. See app/accuracy.py for the evidence behind each rule."""
+    if interval == "1h":
+        return False
+    if cls == "stock" and direction == "down" and str(sector or "") not in FUNDS:
+        return False
+    return True
+
+
 def record(analyses: list[dict], vix: float | None, detail: bool = True) -> int:
-    """Append new predictions (one per ticker/bar/model)."""
+    """Append new predictions (one per ticker/bar/model). Calls that break the rules are not recorded."""
     now = datetime.now(timezone.utc).isoformat()
     rows = []
     for a in analyses:
+        if not follows_rules(a["cls"], a["interval"], a["direction"], a.get("sector")):
+            continue
         pl = a["plan"]
         rows.append({
             "id": f"{a['asof']}|{a['ticker']}|{a['interval']}|{a['model']}",
@@ -139,6 +155,11 @@ def report(cfg: dict) -> dict:
     if g.empty:
         return {"n": 0, "pending": pending}
     g["correct"] = g["correct"].astype(str).str.lower().eq("true")
+    every = {"n": int(len(g)), "hit_rate": float(g["correct"].mean())}
+    g = g[[follows_rules(c, i, d, x) for c, i, d, x in zip(g["cls"], g["interval"], g["direction"], g["sector"].fillna(""))]].copy()
+    if g.empty:
+        return {"n": 0, "pending": pending}
+    always_up = float((pd.to_numeric(g["actual_return"], errors="coerce") > 0).mean())
     g["asof_d"] = pd.to_datetime(g["asof"]).dt.date.astype(str)
     g["abs_err"] = (g["median_return"] - g["actual_return"]).abs()
     alert = cfg.get("signals", {}).get("alert_min_score", 75)
@@ -199,7 +220,7 @@ def report(cfg: dict) -> dict:
     daily["rolling"] = daily["mean"].rolling(10, min_periods=1).mean()
     cols = ["asof", "ticker", "interval", "direction", "agreement", "score", "median_return", "actual_return", "correct", "outcome"]
     return {
-        "n": len(g), "pending": pending, "hit_rate": float(g["correct"].mean()),
+        "n": len(g), "pending": pending, "hit_rate": float(g["correct"].mean()), "always_up": always_up, "every": every, "rules": RULES,
         "hit_rate_high": _rate(g[g["score"] >= alert]["correct"]), "n_high": int((g["score"] >= alert).sum()),
         "median_abs_error": float(g["abs_err"].median()),
         "leaderboard": grp("ticker", 5), "by_sector": grp("sector"), "by_class": grp("cls"), "by_regime": grp("regime"),

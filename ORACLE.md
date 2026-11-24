@@ -74,6 +74,26 @@ The `AI research ratings` job runs your TradingAgents fork on a few watchlist st
 - **On demand:** Actions → AI research ratings → Run workflow, and type tickers.
 - **Grading:** each rating is logged in `state/research_log.csv` with the price at the time and graded after 5 trading days against SPY. Treat ratings as unproven until the scorecard says otherwise.
 
+## Research tools added Nov 2026
+
+| Tab | What it does | Built on | Job | Key needed |
+|---|---|---|---|---|
+| Live Prices | Prices every 30 min; sources take turns so free limits last | Yahoo, Finnhub, Tickerbot, Alpaca, Alpha Vantage | Live prices | none (more sources join as keys are added) |
+| Terminal | Open any S&P 500 stock: candles, bull case and bear case, same-business peers, stocks that move with and against it, companies named beside it in the news | data vault + all jobs below | Edge Lab + performance | none |
+| News | Headlines per stock, each labelled bullish / bearish / neutral | FinBERT (`ProsusAI/finBERT`) | News desk | none |
+| WallStreetBets | Most-mentioned stocks, change vs yesterday, popular posts and their mood | ApeWisdom, Reddit archive | News desk | none (`REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` optional for live Reddit) |
+| Lenses | Value, Quality, Growth at a fair price, Trend, Wall Street view scores for every stock | rule-based checklists on vault fundamentals | Edge Lab + performance | none |
+| Filings Lab | SEC annual reports turned into factors and tested against the next 12 months of returns | SEC EDGAR | Filings Lab (SEC) | set `filings.contact` in `app/config.yaml` to your name and real email; SEC refuses requests without one |
+| Edge Lab | 21 trading rules tested on 535 stocks, judged on newer data they were not picked on | vectorbt | Edge Lab + performance | none |
+| Performance | What following the app's calls would have returned vs SPY | quantstats | Edge Lab + performance | none |
+| Market Scan | Movers and analyst targets | OpenBB, Tickerbot | Research desk, Market scan | `TICKERBOT_API_KEY` for the scans |
+
+Charts use `tradingview/lightweight-charts` (candles) and `apache/echarts` (everything else).
+
+Not wired: `virattt/ai-hedge-fund` and `AI4Finance-Foundation/FinGPT`. The first needs an AI key plus a paid data key beyond five tickers; the second needs a GPU. The Lenses tab and FinBERT cover the same ground for free.
+
+Check which keys are saved: Actions → Secrets check → Run workflow (it prints names only).
+
 ## Change settings
 
 Everything is in `app/config.yaml`, including the watchlist, models, samples, horizon, filters, risk, paper trading and autotrade. You can also manage the watchlist from Telegram with `/watch add TSLA`.
@@ -116,3 +136,35 @@ Treat every signal as unproven until the live report card says otherwise. Result
 ## Test without internet
 
 `python tests/test_oracle.py` runs the whole pipeline on a tiny dummy model with simulated prices. It only proves the plumbing works.
+
+## Added Nov 21, 2026
+
+| Page | Module | What it does |
+|---|---|---|
+| Daily brief (home page) | `app/brief.py` | One page of plain sentences: futures, rates, oil, gold, bitcoin, the S&P 500, sectors, mood, earnings, your stocks, ideas, the crowd, paper strategies. Rewritten every 30 minutes in market hours. |
+| Fear and greed | `app/feargreed.py` | Own 0 to 100 score from six gauges built on saved prices, tested against what the S&P 500 did next. Bitcoin index from alternative.me (credited). |
+| S&P 500 | `app/spx.py` | Chart, lines to watch, breadth, sectors, movers, seasonality, past pullbacks. |
+| Strategy league | `app/strategies.py` | Seven published strategies backtested on 10 years, each running a $100,000 paper account. Start date kept in `state/strategies.json`. |
+| Report card (top section) | `app/accuracy.py` | Compares graded calls with always saying up, shows where calls go wrong, 10-year base rates. |
+
+All five run in `.github/workflows/brief.yml` (nightly, 6:20 AM Eastern, and whenever the price loop starts).
+
+| Calendar | `app/econ.py` | US economic reports for the next 10 days (tries Forex Factory, then Nasdaq, then Finnhub), plus watchlist earnings dates. |
+| S&P 500 (regime section) | `app/regime.py` | Labels the market (calm uptrend to bear market) and shows what happened next in each. |
+| Insider trades | `app/insiders.py` | Open-market buys and sells by insiders at the 15 watchlist stocks, last 90 days. |
+| Earnings moves | `app/earnings.py` | How each watchlist stock moved the day after each past report. |
+
+Call rules since Nov 22, 2026 (`app/ledger.py: follows_rules`): hourly calls are not recorded or scored, and single stocks are never called down.
+
+## Added Nov 23, 2026
+
+- Landing page (`site/index.html`): live brief in a phone, interactive mood, S&P 500, strategy charts, calculator and ask panel. It reads the public data files straight from this repo on GitHub, so it needs no login and no Supabase access.
+- The price loop (`prices.yml`) now runs around the clock: full work in market hours, a brief refresh every third hour otherwise, and it restarts itself every 5.3 hours. It also starts the morning rebuild (`brief.yml`) each weekday.
+- AI research uses `gemini-3.5-flash-lite` for both roles and covers the whole watchlist nightly (`GOOGLE_API_KEY` secret is set).
+- Netlify still builds from `takaxkoi/kronos`. After any change to `site/app.html` or `site/index.html`, copy both files to that repo and push.
+- Economy page (`app/economy.py`): rates, inflation, jobs, growth and stress, a recession watch, and a table of today's conditions against what the S&P 500 did next. FRED refuses GitHub's servers without a key, so it falls back to the US Treasury, BLS, the New York Fed and Yahoo. Add a free `FRED_API_KEY` secret to unlock mortgage rates, jobless claims, GDP, consumer mood, the junk bond spread and financial conditions.
+- Insider trades page also shows market-wide cluster buys (two or more insiders buying), read once a day from OpenInsider.
+- Two models page (`app/second.py`, job `second.yml`): Google's TimesFM 3.0 (from the `takaxkoi/timesfm` fork) forecasts the same 5 days as Kronos for every S&P 500 stock. Calls are saved in `state/second_log.csv` and graded after 5 trading days; the walk-forward backtest re-runs every Saturday. First backtest (Nov 2026): no skill alone (51.0% right against 53.3% for always-up).
+- Ticker tape (in `site/app.html`, every page): a terminal-style strip under the top bar showing the "Markets right now" lines from `brief.json` and every symbol in `quotes.json`. Swipe to drag, tap the amber tag to pause, tap a symbol for price, change, the day's range and links to its page and news. It re-reads both files every 2 minutes, so it is as fresh as the price loop.
+- Live TV and audio page (`#tv`, in `site/app.html`): free YouTube live streams (Bloomberg TV, Yahoo Finance, CNBC, Fox Business, NBC News NOW, ABC News Live, CBS News 24/7, LiveNOW from FOX, Sky News, Al Jazeera English) in YouTube's own player by channel id, plus market podcasts read from Apple's podcast directory when a show is tapped. Whatever is on stays in a dock above the page while you move around. No backend job and no key.
+- Earnings moves now cover the whole S&P 500 (`app/earnings.py`). Report dates are saved in `data/earnings/dates.csv.gz`; each morning run refreshes the 90 stalest tickers. To refresh all at once: Actions → Daily brief + market insights → Run workflow → set the earnings number to 520.

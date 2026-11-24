@@ -99,6 +99,9 @@ class AVBudget:
             if not msg:
                 return j if want_json else None
             if _av_limited(msg):
+                if "per second" in msg and attempt == 0:   # a burst (another job using the same key), not the daily cap
+                    time.sleep(5)
+                    continue
                 if self.premium and attempt == 0:
                     log("AV per-minute cap hit — pausing 60s")
                     time.sleep(60)
@@ -298,7 +301,8 @@ def capture() -> dict:
     core = list(dict.fromkeys([t.upper() for t in cfg["watchlist"]] + list(cfg["holdings"]) + cfg["indices"]))
     spx = [r["ticker"] for r in sp500()]
     extra = list(cfg["sectors"]) + cfg["leveraged"] + list(cfg["forex"]) + list(cfg["commodities"]) + cfg["crypto"] + \
-        [cfg["vix"], "^TNX", "^IRX", "^FVX", "DX-Y.NYB", "HYG", "LQD", "TLT", "TIP", "GLD", "USO"]
+        [cfg["vix"], "^TNX", "^IRX", "^FVX", "DX-Y.NYB", "HYG", "LQD", "TLT", "TIP", "GLD", "USO",
+         "^GSPC", "^IXIC", "^DJI", "^RUT"]   # the indexes themselves, so pages can show 6,900 rather than SPY's 690
     universe = list(dict.fromkeys(core + spx + extra))
 
     hist = fetch_history(universe, "1d", cfg, period="1mo")
@@ -318,14 +322,28 @@ def capture() -> dict:
 
     # one-time long backfill of daily history so the Edge Lab has years to test on
     hist_dir = VAULT / "history"
-    if cc.get("backfill", True) and not (hist_dir / "_done").exists():
-        log("backfilling 10 years of daily prices (one time)…")
+    earlier = sorted(d.name for d in (VAULT / "daily").iterdir() if d.is_dir() and d.name < day) if (VAULT / "daily").exists() else []
+    last_full = (hist_dir / "_done").read_text().strip() if (hist_dir / "_done").exists() else None
+    # each daily file carries 5 trading days, so any break of more than a week between captures
+    # since the last full download leaves a hole in the history
+    chain = [last_full] + [x for x in earlier if x > last_full] + [day] if last_full else []
+    gap = any((pd.Timestamp(b) - pd.Timestamp(a)).days > 7 for a, b in zip(chain, chain[1:]))
+    if cc.get("backfill", True) and (last_full is None or gap):
+        log("downloading 10 years of daily prices (first run, or the vault missed more than a week)…")
         full = fetch_history(universe, "1d", cfg, period="10y")
         for t, df in full.items():
             _save_csv(df.reset_index(), hist_dir / f"{t.replace('^', '_').replace('=', '_')}.csv.gz")
         hist_dir.mkdir(parents=True, exist_ok=True)
         (hist_dir / "_done").write_text(day)
         man["files"]["history_backfill"] = len(full)
+    # tickers added to the list since the last full download get their own 10 years
+    fn = lambda t: hist_dir / f"{t.replace('^', '_').replace('=', '_')}.csv.gz"
+    missing = [t for t in universe if not fn(t).exists()][:60]
+    if cc.get("backfill", True) and missing and hist_dir.exists():
+        log(f"downloading 10 years for {len(missing)} new tickers: {', '.join(missing[:12])}")
+        for t, df in fetch_history(missing, "1d", cfg, period="10y").items():
+            _save_csv(df.reset_index(), fn(t))
+        man["files"]["history_new"] = missing
 
     stocks = [t for t in universe if asset_class(t, cfg) == "stock" and t not in cfg["sectors"]
               and t not in cfg["leveraged"] and t not in cfg["indices"]]

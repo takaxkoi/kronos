@@ -1,0 +1,35 @@
+# Kronos Oracle schedule. Times are UTC (same times the GitHub jobs were set for).
+CRON_TZ=UTC
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+R=/opt/oracle/server/run.sh
+
+# prices, live news and the brief: every 30 minutes, 6 AM to 4:40 PM Eastern on weekdays; every 3 hours otherwise
+*/30 11-21 * * 1-5   root $R prices
+5 0,3,6,9 * * *      root $R prices
+5 12,15,18,21 * * 0,6 root $R prices
+# morning rebuild (mood, S&P 500, strategies, calendar, economy) and again after the nightly data
+20 11 * * 1-5        root $R brief
+45 0 * * 2-6         root $R brief
+# after the close
+15 21 * * 1-5        root $R daily
+20 21 * * 1-5        root $R tickerbot
+40 22 * * 1-5        root $R capture
+30 23 * * 1-5        root $R research
+50 23 * * 1-5        root $R edge
+35 1 * * 2-6         root $R gov
+15 22 * * 5          root $R gov
+10 7 * * 2-6         root $R sp500
+40 8 * * 2-6         root $R second
+# through the day
+40 12 * * 1-5        root $R premarket
+45 13,21 * * 1-5     root $R desk
+25 12,16,20 * * 1-5  root $R news
+25 14 * * 0,6        root $R news
+17 1,13 * * *        root $R crypto
+23 * * * *           root $R cryptodesk
+# slow movers
+15 9 * * 6           root $R filings
+0 9 2 * *            root $R retrain
+# keep logs from growing forever
+0 4 * * 0            root find /var/log/oracle -name '*.log' -size +20M -exec truncate -s 5M {} \;
