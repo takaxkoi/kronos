@@ -64,6 +64,7 @@ systemctl enable --now cron >/dev/null 2>&1 || service cron start
 ln -sf /opt/oracle/server/oracle.sh /usr/local/bin/oracle
 
 say "Done. Next:"
-echo "  1. Put your keys in:   nano /etc/oracle.env      (save with Ctrl+O, Enter, Ctrl+X)"
-echo "  2. First run:          oracle first"
-echo "  3. Check on it:        oracle status"
+echo "  1. oracle token     (makes the dashboard sync token; send the fingerprint it prints to Claude)"
+echo "  2. oracle keys      (type in your Finnhub, Tickerbot and Google keys)"
+echo "  3. oracle first     (first full run)"
+echo "  4. oracle status    (see what has run)"
